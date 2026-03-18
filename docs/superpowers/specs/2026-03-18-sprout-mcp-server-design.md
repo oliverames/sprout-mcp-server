@@ -116,7 +116,9 @@ Retrieves daily profile-level metrics (followers, impressions, engagement rates)
 
 **Filter construction:**
 - `customer_profile_id.eq(<profile_ids>)`
-- `reporting_period.in(<start_date>...<end_date>)` (end-exclusive — consistent with API examples)
+- `reporting_period.in(<start_date>..<end_date>)` (two dots = end-inclusive, so `end_date: "2024-01-31"` includes Jan 31st — more intuitive for daily metrics)
+
+Note: The API supports both `..` (inclusive) and `...` (exclusive). We use inclusive here for UX; post/message/listening tools use exclusive (`...`) for `created_time` which follows the standard half-open interval convention.
 
 **Pagination:** Index-based. Response includes `current_page` and `total_pages`.
 
