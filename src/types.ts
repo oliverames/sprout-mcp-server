@@ -89,7 +89,8 @@ export interface MediaUploadResult {
 }
 
 export interface ToolResponse {
+  [key: string]: unknown;
   content: Array<{ type: "text"; text: string }>;
-  structuredContent?: unknown;
+  structuredContent?: Record<string, unknown>;
   isError?: boolean;
 }
