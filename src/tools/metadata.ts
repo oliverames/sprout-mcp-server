@@ -27,7 +27,7 @@ export async function handleListCustomers(
 ): Promise<ToolResponse> {
   const response = await client.get<SproutApiResponse<SproutCustomer>>("/v1/metadata/client");
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], ["customer_id", "name"])
+    formatAsTable(data, ["customer_id", "name"])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -41,7 +41,7 @@ export async function handleListProfiles(
     `/v1/${customerId}/metadata/customer`
   );
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], [
+    formatAsTable(data, [
       "customer_profile_id",
       "network_type",
       "name",
@@ -60,7 +60,7 @@ export async function handleListGroups(
     `/v1/${customerId}/metadata/customer/groups`
   );
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], ["group_id", "name"])
+    formatAsTable(data, ["group_id", "name"])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -74,7 +74,7 @@ export async function handleListTags(
     `/v1/${customerId}/metadata/customer/tags`
   );
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], ["tag_id", "text", "type", "active"])
+    formatAsTable(data, ["tag_id", "text", "type", "active"])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -88,7 +88,7 @@ export async function handleListUsers(
     `/v1/${customerId}/metadata/customer/users`
   );
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], ["id", "name", "email"])
+    formatAsTable(data, ["id", "name", "email"])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -102,7 +102,7 @@ export async function handleListTeams(
     `/v1/${customerId}/metadata/customer/teams`
   );
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], ["id", "name", "description"])
+    formatAsTable(data, ["id", "name", "description"])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -116,7 +116,7 @@ export async function handleListQueues(
     `/v1/${customerId}/metadata/customer/queues`
   );
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], ["id", "name", "description"])
+    formatAsTable(data, ["id", "name", "description"])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -130,7 +130,7 @@ export async function handleListTopics(
     `/v1/${customerId}/metadata/customer/topics`
   );
   const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as unknown as Record<string, unknown>[], ["id", "name", "topic_type", "description"])
+    formatAsTable(data, ["id", "name", "topic_type", "description"])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }

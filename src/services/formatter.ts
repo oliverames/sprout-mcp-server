@@ -2,7 +2,7 @@ import { CHARACTER_LIMIT } from "../constants.js";
 import type { ResponseFormat } from "../types.js";
 
 export function formatAsTable(
-  data: Record<string, unknown>[],
+  data: object[],
   columns: string[]
 ): string {
   if (data.length === 0) return "No data found.";
@@ -10,7 +10,10 @@ export function formatAsTable(
   const header = `| ${columns.join(" | ")} |`;
   const separator = `| ${columns.map(() => "---").join(" | ")} |`;
   const rows = data.map(
-    (row) => `| ${columns.map((col) => String(row[col] ?? "")).join(" | ")} |`
+    (row) => {
+      const record = row as Record<string, unknown>;
+      return `| ${columns.map((col) => String(record[col] ?? "")).join(" | ")} |`;
+    }
   );
 
   return [header, separator, ...rows].join("\n");
