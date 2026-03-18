@@ -1,0 +1,100 @@
+import { describe, it, expect, vi } from "vitest";
+import type { ApiClient } from "../../src/services/api-client.js";
+import {
+  handleCreateDraftPost,
+  handleUploadMedia,
+  handleGetPost,
+} from "../../src/tools/publishing.js";
+
+function mockApiClient(responseData: unknown): ApiClient {
+  return {
+    get: vi.fn().mockResolvedValue({ data: responseData }),
+    post: vi.fn().mockResolvedValue({ data: responseData }),
+    postFormData: vi.fn().mockResolvedValue(responseData),
+  };
+}
+
+describe("handleCreateDraftPost", () => {
+  it("constructs correct request body with draft=true and delivery wrapper", async () => {
+    const client = mockApiClient([{ id: "post-1" }]);
+    await handleCreateDraftPost(client, 999, {
+      profile_ids: [123, 456],
+      group_id: 789,
+      text: "Hello world!",
+      scheduled_times: ["2024-06-30T18:00:00Z"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      "/v1/999/publishing/posts",
+      expect.objectContaining({
+        customer_profile_ids: [123, 456],
+        group_id: 789,
+        text: "Hello world!",
+        is_draft: true,
+        delivery: {
+          scheduled_times: ["2024-06-30T18:00:00Z"],
+          type: "SCHEDULED",
+        },
+      })
+    );
+  });
+
+  it("includes media array with media_id and media_type", async () => {
+    const client = mockApiClient([]);
+    await handleCreateDraftPost(client, 999, {
+      profile_ids: [123],
+      group_id: 789,
+      text: "Photo post",
+      media: [{ media_id: "uuid-1", media_type: "PHOTO" as const }],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        media: [{ media_id: "uuid-1", media_type: "PHOTO" }],
+      })
+    );
+  });
+
+  it("omits delivery when no scheduled_times", async () => {
+    const client = mockApiClient([]);
+    await handleCreateDraftPost(client, 999, {
+      profile_ids: [123],
+      group_id: 789,
+      text: "No schedule",
+      response_format: "json",
+    });
+
+    const callBody = (client.post as ReturnType<typeof vi.fn>).mock.calls[0]![1] as Record<string, unknown>;
+    expect(callBody.delivery).toBeUndefined();
+  });
+});
+
+describe("handleUploadMedia", () => {
+  it("sends media_url as form data", async () => {
+    const client = mockApiClient({ media_id: "uuid-1", expiration_time: "2024-01-02" });
+    await handleUploadMedia(client, 999, {
+      media_url: "https://example.com/image.jpg",
+      response_format: "json",
+    });
+
+    expect(client.postFormData).toHaveBeenCalledWith(
+      "/v1/999/media/",
+      expect.any(FormData)
+    );
+  });
+});
+
+describe("handleGetPost", () => {
+  it("calls correct endpoint", async () => {
+    const client = mockApiClient({ id: "post-1", text: "Hello" });
+    await handleGetPost(client, 999, {
+      post_id: "post-1",
+      response_format: "json",
+    });
+
+    expect(client.get).toHaveBeenCalledWith("/v1/999/publishing/posts/post-1");
+  });
+});
