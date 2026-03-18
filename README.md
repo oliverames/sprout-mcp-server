@@ -57,6 +57,22 @@ Add to your Claude Code settings (`.claude/settings.json`):
 {
   "mcpServers": {
     "sprout": {
+      "command": "npx",
+      "args": ["@oliverames/sprout-mcp-server"],
+      "env": {
+        "SPROUT_API_TOKEN": "your-token-here"
+      }
+    }
+  }
+}
+```
+
+Or if running from a local clone:
+
+```json
+{
+  "mcpServers": {
+    "sprout": {
       "command": "node",
       "args": ["/path/to/sprout-mcp-server/dist/index.js"],
       "env": {
