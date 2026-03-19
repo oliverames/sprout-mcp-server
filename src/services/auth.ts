@@ -67,7 +67,7 @@ class OAuthM2MProvider implements AuthProvider {
   }
 }
 
-export function createAuthProvider(): AuthProvider {
+export function createAuthProvider(): AuthProvider | null {
   const apiToken = process.env.SPROUT_API_TOKEN;
   if (apiToken) {
     return new StaticTokenProvider(apiToken);
@@ -81,9 +81,5 @@ export function createAuthProvider(): AuthProvider {
     return new OAuthM2MProvider(clientId, clientSecret, orgId);
   }
 
-  throw new Error(
-    "No authentication configured. Set either:\n" +
-      "  - SPROUT_API_TOKEN (static API token), or\n" +
-      "  - SPROUT_CLIENT_ID + SPROUT_CLIENT_SECRET + SPROUT_ORG_ID (OAuth M2M)"
-  );
+  return null;
 }

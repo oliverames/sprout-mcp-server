@@ -12,11 +12,46 @@ import { registerCasesTools } from "./tools/cases.js";
 import type { SproutApiResponse, SproutCustomer } from "./types.js";
 
 async function main(): Promise<void> {
-  // 1. Initialize auth
-  const auth = createAuthProvider();
-  const client = createApiClient(auth);
+  // 1. Create MCP server (always starts, even without auth)
+  const server = new McpServer({
+    name: "sprout-mcp-server",
+    version: "1.0.1",
+  });
 
-  // 2. Discover customer ID
+  // 2. Check authentication
+  const auth = createAuthProvider();
+
+  if (!auth) {
+    // No credentials — register a single tool that explains what's needed
+    console.error("Sprout Social MCP Server: no authentication configured. Starting in unauthenticated mode.");
+    server.tool(
+      "sprout_auth_status",
+      "Check Sprout Social authentication status and get setup instructions",
+      {},
+      async () => ({
+        content: [{
+          type: "text" as const,
+          text: "⚠️ Sprout Social MCP server is running but not authenticated.\n\n" +
+            "To connect, set one of these in your Claude Code environment:\n\n" +
+            "Option 1 — Static API token:\n" +
+            "  SPROUT_API_TOKEN=your-token-here\n\n" +
+            "Option 2 — OAuth M2M credentials:\n" +
+            "  SPROUT_CLIENT_ID=your-client-id\n" +
+            "  SPROUT_CLIENT_SECRET=your-client-secret\n" +
+            "  SPROUT_ORG_ID=your-org-id\n\n" +
+            "After setting credentials, restart Claude Code to pick up the changes."
+        }]
+      })
+    );
+
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("Sprout Social MCP Server running (unauthenticated mode)");
+    return;
+  }
+
+  // 3. Authenticated — set up API client and discover customer
+  const client = createApiClient(auth);
   let defaultCustomerId: number;
 
   const envCustomerId = process.env.SPROUT_CUSTOMER_ID;
@@ -43,12 +78,6 @@ async function main(): Promise<void> {
       );
     }
   }
-
-  // 3. Create MCP server
-  const server = new McpServer({
-    name: "sprout-mcp-server",
-    version: "1.0.0",
-  });
 
   // 4. Register all tools
   registerMetadataTools(server, client, defaultCustomerId);
