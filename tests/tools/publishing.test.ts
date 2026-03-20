@@ -73,9 +73,16 @@ describe("handleCreateDraftPost", () => {
 });
 
 describe("handleUploadMedia", () => {
-  it("sends media_url as form data", async () => {
-    const client = mockApiClient({ media_id: "uuid-1", expiration_time: "2024-01-02" });
-    await handleUploadMedia(client, 999, {
+  it("sends media_url as form data and unwraps data envelope", async () => {
+    const client = {
+      get: vi.fn(),
+      post: vi.fn(),
+      postFormData: vi.fn().mockResolvedValue({
+        data: [{ media_id: "uuid-1", expiration_time: "2024-01-02T00:00:00Z" }],
+      }),
+    } satisfies ApiClient;
+
+    const result = await handleUploadMedia(client, 999, {
       media_url: "https://example.com/image.jpg",
       response_format: "json",
     });
@@ -84,6 +91,8 @@ describe("handleUploadMedia", () => {
       "/v1/999/media/",
       expect.any(FormData)
     );
+    const parsed = JSON.parse(result.content[0]!.text);
+    expect(parsed.media_id).toBe("uuid-1");
   });
 });
 

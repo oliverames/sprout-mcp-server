@@ -21,6 +21,7 @@ describe("handleListeningMessages", () => {
       start_date: "2024-01-01",
       end_date: "2024-02-01",
       sentiment: "POSITIVE",
+      fields: ["text", "created_time"],
       response_format: "json",
     });
 
@@ -42,6 +43,7 @@ describe("handleListeningMessages", () => {
       start_date: "2024-01-01",
       end_date: "2024-02-01",
       text_search: "sprout OR social",
+      fields: ["text"],
       response_format: "json",
     });
 
@@ -55,6 +57,24 @@ describe("handleListeningMessages", () => {
     );
   });
 
+  it("sends fields in request body", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMessages(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      fields: ["text", "network", "created_time"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        fields: ["text", "network", "created_time"],
+      })
+    );
+  });
+
   it("includes network filter", async () => {
     const client = mockApiClient([]);
     await handleListeningMessages(client, 999, {
@@ -62,6 +82,7 @@ describe("handleListeningMessages", () => {
       start_date: "2024-01-01",
       end_date: "2024-02-01",
       network: "twitter",
+      fields: ["text"],
       response_format: "json",
     });
 

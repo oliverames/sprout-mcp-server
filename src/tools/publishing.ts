@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../services/api-client.js";
-import { formatOutput, truncateIfNeeded } from "../services/formatter.js";
+import { formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
   ResponseFormatSchema,
   CustomerIdSchema,
@@ -71,12 +71,13 @@ export async function handleUploadMedia(
   const formData = new FormData();
   formData.append("media_url", params.media_url);
 
-  const result = await client.postFormData<{ media_id: string; expiration_time: string }>(
+  const result = await client.postFormData<{ data: Array<{ media_id: string; expiration_time: string }> }>(
     `/v1/${customerId}/media/`,
     formData
   );
 
-  const text = formatOutput(result, params.response_format);
+  const mediaInfo = result.data?.[0] ?? result;
+  const text = formatOutput(mediaInfo, params.response_format);
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
 
@@ -85,7 +86,7 @@ export async function handleGetPost(
   customerId: number,
   params: GetPostParams
 ): Promise<ToolResponse> {
-  const response = await client.get<{ data: unknown }>(
+  const response = await client.get<{ data: unknown[] }>(
     `/v1/${customerId}/publishing/posts/${params.post_id}`
   );
 
@@ -133,16 +134,16 @@ export function registerPublishingTools(
             .optional()
             .describe("Media attachments"),
           scheduled_times: z
-            .array(z.string())
+            .array(z.string().datetime({ message: "Each scheduled time must be ISO 8601 format (e.g. 2024-06-30T18:00:00Z)" }))
             .optional()
-            .describe("ISO 8601 scheduled delivery times"),
+            .describe("ISO 8601 scheduled delivery times in UTC"),
           tag_ids: z.array(z.number()).optional().describe("Tag IDs to apply"),
           response_format: ResponseFormatSchema,
         })
         .strict(),
       annotations: WRITE_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleCreateDraftPost(client, cid, {
         profile_ids: params.profile_ids,
@@ -153,7 +154,7 @@ export function registerPublishingTools(
         tag_ids: params.tag_ids,
         response_format: params.response_format,
       });
-    }
+    })
   );
 
   server.registerTool(
@@ -170,13 +171,13 @@ export function registerPublishingTools(
         .strict(),
       annotations: WRITE_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleUploadMedia(client, cid, {
         media_url: params.media_url,
         response_format: params.response_format,
       });
-    }
+    })
   );
 
   server.registerTool(
@@ -193,12 +194,12 @@ export function registerPublishingTools(
         .strict(),
       annotations: READ_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleGetPost(client, cid, {
         post_id: params.post_id,
         response_format: params.response_format,
       });
-    }
+    })
   );
 }

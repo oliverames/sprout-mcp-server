@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../services/api-client.js";
 import { buildEqFilter, buildDateRangeFilter } from "../services/filter-builder.js";
-import { formatAsTable, formatOutput, truncateIfNeeded } from "../services/formatter.js";
+import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
   ResponseFormatSchema,
   CustomerIdSchema,
@@ -12,7 +12,7 @@ import {
   TimezoneSchema,
 } from "../schemas/common.js";
 import type { SproutApiResponse, ToolResponse, ResponseFormat } from "../types.js";
-import { CASES_MAX_DATE_RANGE_DAYS } from "../constants.js";
+import { CASES_MAX_DATE_RANGE_DAYS, MAX_CASE_IDS_PER_REQUEST } from "../constants.js";
 
 interface GetCasesParams {
   start_date?: string;
@@ -48,11 +48,31 @@ export async function handleGetCases(
     };
   }
 
+  if (!hasCaseIds && !params.start_date && !params.end_date) {
+    return {
+      isError: true,
+      content: [{ type: "text" as const, text: "Either case_ids or a date range (start_date + end_date) is required." }],
+    };
+  }
+
+  if ((params.start_date && !params.end_date) || (!params.start_date && params.end_date)) {
+    return {
+      isError: true,
+      content: [{ type: "text" as const, text: "Both start_date and end_date are required when using date filters." }],
+    };
+  }
+
   if (hasDateFilters && params.start_date && params.end_date) {
     const start = new Date(params.start_date);
     const end = new Date(params.end_date);
     const diffMs = end.getTime() - start.getTime();
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    if (diffDays < 0) {
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: "start_date must be before end_date." }],
+      };
+    }
     if (diffDays > CASES_MAX_DATE_RANGE_DAYS) {
       return {
         isError: true,
@@ -108,16 +128,15 @@ export async function handleGetCases(
   );
 
   const paging = response.paging as { next_cursor?: string } | undefined;
-  const nextCursor = paging?.next_cursor;
-
   const defaultColumns = ["case_id", "status", "priority", "type", "subject", "updated_time"];
-  const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as object[], defaultColumns)
+  const text = formatOutput(
+    response.data,
+    params.response_format,
+    (data) => formatAsTable(data as object[], defaultColumns),
+    paging?.next_cursor ? { next_cursor: paging.next_cursor } : undefined
   );
 
-  const fullText = nextCursor ? `${text}\n\nNext cursor: ${nextCursor}` : text;
-
-  return { content: [{ type: "text" as const, text: truncateIfNeeded(fullText) }] };
+  return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
 
 const TOOL_ANNOTATIONS = {
@@ -149,7 +168,7 @@ export function registerCasesTools(
             .describe("Which date field to filter on"),
           case_ids: z
             .array(z.number())
-            .max(100)
+            .max(MAX_CASE_IDS_PER_REQUEST)
             .optional()
             .describe("Fetch specific cases by ID (mutually exclusive with date filters)"),
           status: z
@@ -181,7 +200,7 @@ export function registerCasesTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleGetCases(client, cid, {
         start_date: params.start_date,
@@ -201,6 +220,6 @@ export function registerCasesTools(
         cursor: params.cursor,
         response_format: params.response_format,
       });
-    }
+    })
   );
 }

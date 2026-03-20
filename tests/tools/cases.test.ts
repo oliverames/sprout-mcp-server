@@ -108,6 +108,40 @@ describe("handleGetCases", () => {
     expect(result.content[0]!.text).toContain("mutually exclusive");
   });
 
+  it("returns error when no case_ids and no date filters", async () => {
+    const client = mockApiClient([]);
+    const result = await handleGetCases(client, 999, {
+      status: ["OPEN"],
+      response_format: "json",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("required");
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it("returns error when only start_date is provided", async () => {
+    const client = mockApiClient([]);
+    const result = await handleGetCases(client, 999, {
+      start_date: "2024-01-01",
+      response_format: "json",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("Both start_date and end_date");
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it("returns error when start_date is after end_date", async () => {
+    const client = mockApiClient([]);
+    const result = await handleGetCases(client, 999, {
+      start_date: "2024-01-07",
+      end_date: "2024-01-01",
+      response_format: "json",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("before");
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
   it("includes status, priority, type filters", async () => {
     const client = mockApiClient([]);
     await handleGetCases(client, 999, {

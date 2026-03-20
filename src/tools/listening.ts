@@ -6,7 +6,7 @@ import {
   buildDateRangeFilter,
   buildTextMatchFilter,
 } from "../services/filter-builder.js";
-import { formatAsTable, formatOutput, truncateIfNeeded } from "../services/formatter.js";
+import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
   ResponseFormatSchema,
   CustomerIdSchema,
@@ -24,7 +24,7 @@ interface ListeningMessagesParams {
   sentiment?: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
   network?: string;
   text_search?: string;
-  fields?: string[];
+  fields: string[];
   sort_by?: string;
   sort_order?: "asc" | "desc";
   timezone?: string;
@@ -69,7 +69,7 @@ export async function handleListeningMessages(
     sort: [`${sortBy}:${sortOrder}`],
   };
 
-  if (params.fields !== undefined) body.fields = params.fields;
+  body.fields = params.fields;
   if (params.timezone !== undefined) body.timezone = params.timezone;
   if (params.page !== undefined) body.page = params.page;
   if (params.limit !== undefined) body.limit = params.limit;
@@ -80,17 +80,13 @@ export async function handleListeningMessages(
   );
 
   const paging = response.paging as { current_page?: number; total_pages?: number } | undefined;
-  const pageInfo =
-    paging?.current_page !== undefined && paging?.total_pages !== undefined
-      ? `\n\nPage ${paging.current_page} of ${paging.total_pages}`
-      : "";
-
-  const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as object[], params.fields ?? ["created_time"])
+  const text = formatOutput(
+    response.data,
+    params.response_format,
+    (data) => formatAsTable(data as object[], params.fields),
+    paging
   );
-
-  const fullText = pageInfo ? `${text}${pageInfo}` : text;
-  return { content: [{ type: "text" as const, text: truncateIfNeeded(fullText) }] };
+  return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
 
 export async function handleListeningMetrics(
@@ -156,7 +152,7 @@ export function registerListeningTools(
             .string()
             .optional()
             .describe("Full-text search (supports OR operator)"),
-          fields: z.array(z.string()).optional().describe("Fields to return"),
+          fields: z.array(z.string()).min(1).describe("Fields to return (at least one required, e.g. 'text', 'created_time', 'network')"),
           sort_by: z.string().optional().describe("Field to sort by"),
           sort_order: SortOrderSchema,
           timezone: TimezoneSchema,
@@ -167,7 +163,7 @@ export function registerListeningTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListeningMessages(client, cid, {
         topic_id: params.topic_id,
@@ -184,7 +180,7 @@ export function registerListeningTools(
         limit: params.limit,
         response_format: params.response_format,
       });
-    }
+    })
   );
 
   server.registerTool(
@@ -210,7 +206,7 @@ export function registerListeningTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListeningMetrics(client, cid, {
         topic_id: params.topic_id,
@@ -221,6 +217,6 @@ export function registerListeningTools(
         timezone: params.timezone,
         response_format: params.response_format,
       });
-    }
+    })
   );
 }

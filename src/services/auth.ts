@@ -42,6 +42,10 @@ class OAuthM2MProvider implements AuthProvider {
     this.refreshPromise = this.refresh();
     try {
       return await this.refreshPromise;
+    } catch (error) {
+      this.cachedToken = null;
+      this.expiresAt = 0;
+      throw error;
     } finally {
       this.refreshPromise = null;
     }
