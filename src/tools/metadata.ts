@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../services/api-client.js";
-import { formatAsTable, formatOutput, truncateIfNeeded } from "../services/formatter.js";
+import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import { ResponseFormatSchema, CustomerIdSchema } from "../schemas/common.js";
 import type {
   SproutApiResponse,
@@ -159,9 +159,9 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
-      return handleListCustomers(client, { response_format: params.response_format });
-    }
+    async (params) => safeToolCall(() =>
+      handleListCustomers(client, { response_format: params.response_format })
+    )
   );
 
   server.registerTool(
@@ -177,10 +177,10 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListProfiles(client, cid, { response_format: params.response_format });
-    }
+    })
   );
 
   server.registerTool(
@@ -196,10 +196,10 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListGroups(client, cid, { response_format: params.response_format });
-    }
+    })
   );
 
   server.registerTool(
@@ -215,10 +215,10 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListTags(client, cid, { response_format: params.response_format });
-    }
+    })
   );
 
   server.registerTool(
@@ -234,10 +234,10 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListUsers(client, cid, { response_format: params.response_format });
-    }
+    })
   );
 
   server.registerTool(
@@ -253,10 +253,10 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListTeams(client, cid, { response_format: params.response_format });
-    }
+    })
   );
 
   server.registerTool(
@@ -272,10 +272,10 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListQueues(client, cid, { response_format: params.response_format });
-    }
+    })
   );
 
   server.registerTool(
@@ -291,9 +291,9 @@ export function registerMetadataTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleListTopics(client, cid, { response_format: params.response_format });
-    }
+    })
   );
 }

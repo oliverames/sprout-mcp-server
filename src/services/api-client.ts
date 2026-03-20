@@ -24,21 +24,23 @@ export function handleApiError(error: unknown): string {
     const suffix = requestId ? ` (Request ID: ${requestId})` : "";
 
     if (axiosErr.response) {
+      const apiMsg = axiosErr.response.data?.error;
+      const detail = apiMsg ? ` — ${apiMsg}` : "";
       switch (axiosErr.response.status) {
         case 400:
-          return `Bad request. Check parameter values and date formats.${suffix}`;
+          return `Bad request. Check parameter values and date formats.${detail}${suffix}`;
         case 401:
-          return `Authentication failed. Check your SPROUT_API_TOKEN or OAuth credentials.${suffix}`;
+          return `Authentication failed. Check your SPROUT_API_TOKEN or OAuth credentials.${detail}${suffix}`;
         case 403:
-          return `Insufficient permissions. Verify API access is enabled in Sprout settings.${suffix}`;
+          return `Insufficient permissions. Verify API access is enabled in Sprout settings.${detail}${suffix}`;
         case 404:
-          return `Resource not found. Check the ID is correct.${suffix}`;
+          return `Resource not found. Check the ID is correct.${detail}${suffix}`;
         case 429:
           return `Rate limited. The server will retry automatically.${suffix}`;
         case 504:
           return `Request timed out. Try narrowing the date range or reducing the number of profiles.${suffix}`;
         default:
-          return `API error (${axiosErr.response.status}): ${axiosErr.response.data?.error ?? axiosErr.message}${suffix}`;
+          return `API error (${axiosErr.response.status}): ${apiMsg ?? axiosErr.message}${suffix}`;
       }
     }
 
@@ -114,8 +116,9 @@ export function createApiClient(auth: AuthProvider): ApiClient {
 
         if (status && RETRYABLE_STATUS_CODES.includes(status) && attempt < retries) {
           const retryAfter = axiosErr.response?.headers?.["retry-after"];
-          const delayMs = retryAfter
-            ? parseInt(retryAfter, 10) * 1000
+          const retryAfterMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : NaN;
+          const delayMs = !isNaN(retryAfterMs) && retryAfterMs > 0
+            ? retryAfterMs
             : RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
           await sleep(delayMs);
           continue;
@@ -131,16 +134,30 @@ export function createApiClient(auth: AuthProvider): ApiClient {
   async function pollFor202<T>(
     fn: () => Promise<AxiosResponse<T>>
   ): Promise<T> {
+    let transientRetries = 0;
     for (let attempt = 0; attempt < MAX_202_RETRIES; attempt++) {
       await rateLimiter.throttle();
-      const response = await fn();
+
+      let response: AxiosResponse<T>;
+      try {
+        response = await fn();
+      } catch (error) {
+        const axiosErr = error as AxiosError;
+        const status = axiosErr.response?.status;
+        if (status && RETRYABLE_STATUS_CODES.includes(status) && transientRetries < MAX_RETRIES) {
+          transientRetries++;
+          await sleep(RETRY_BASE_DELAY_MS * Math.pow(2, transientRetries - 1));
+          continue;
+        }
+        throw error;
+      }
 
       if (response.status !== 202) {
         return response.data;
       }
 
-      const body = response.data as Record<string, unknown>;
-      const waitUntil = body?.wait_until as string | undefined;
+      const body = response.data as { data?: Array<{ wait_until?: string }> };
+      const waitUntil = body?.data?.[0]?.wait_until;
       if (waitUntil) {
         const waitMs = new Date(waitUntil).getTime() - Date.now();
         if (waitMs > 0) {
@@ -151,7 +168,7 @@ export function createApiClient(auth: AuthProvider): ApiClient {
       }
     }
 
-    throw new Error("Media processing timed out after maximum retries");
+    throw new Error(`Media processing timed out after ${MAX_202_RETRIES} poll attempts`);
   }
 
   return {
@@ -167,7 +184,7 @@ export function createApiClient(auth: AuthProvider): ApiClient {
       return pollFor202(() =>
         instance.post<T>(path, formData, {
           headers: { "Content-Type": "multipart/form-data" },
-          validateStatus: (status: number) => status < 500 || status === 202,
+          validateStatus: (status: number) => (status >= 200 && status < 300) || status === 202,
         })
       );
     },

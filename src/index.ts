@@ -57,6 +57,9 @@ async function main(): Promise<void> {
   const envCustomerId = process.env.SPROUT_CUSTOMER_ID;
   if (envCustomerId) {
     defaultCustomerId = parseInt(envCustomerId, 10);
+    if (isNaN(defaultCustomerId)) {
+      throw new Error(`Invalid SPROUT_CUSTOMER_ID: "${envCustomerId}" is not a number.`);
+    }
     console.error(`Using customer ID from env: ${defaultCustomerId}`);
   } else {
     const response = await client.get<SproutApiResponse<SproutCustomer>>(
@@ -96,4 +99,14 @@ async function main(): Promise<void> {
 main().catch((error) => {
   console.error("Fatal error:", error.message);
   process.exit(1);
+});
+
+process.on("SIGINT", () => {
+  console.error("Sprout Social MCP Server shutting down (SIGINT)");
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  console.error("Sprout Social MCP Server shutting down (SIGTERM)");
+  process.exit(0);
 });

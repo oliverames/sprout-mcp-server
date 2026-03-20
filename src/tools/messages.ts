@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../services/api-client.js";
 import { buildEqFilter, buildDateRangeFilter } from "../services/filter-builder.js";
-import { formatAsTable, formatOutput, truncateIfNeeded } from "../services/formatter.js";
+import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
   ResponseFormatSchema,
   CustomerIdSchema,
@@ -11,6 +11,7 @@ import {
   SortOrderSchema,
   TimezoneSchema,
 } from "../schemas/common.js";
+import { MAX_MESSAGE_IDS_PER_REQUEST } from "../constants.js";
 import type { SproutApiResponse, ToolResponse, ResponseFormat } from "../types.js";
 
 interface GetMessagesParams {
@@ -36,6 +37,13 @@ export async function handleGetMessages(
   params: GetMessagesParams
 ): Promise<ToolResponse> {
   let filters: string[];
+
+  if ((params.start_date && !params.end_date) || (!params.start_date && params.end_date)) {
+    return {
+      isError: true,
+      content: [{ type: "text" as const, text: "Both start_date and end_date are required when using date filters." }],
+    };
+  }
 
   if (params.message_ids && params.message_ids.length > 0) {
     filters = [buildEqFilter("message_id", params.message_ids)];
@@ -78,17 +86,14 @@ export async function handleGetMessages(
   );
 
   const paging = response.paging as { next_cursor?: string } | undefined;
-  const nextCursor = paging?.next_cursor;
-
-  const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data as object[], params.fields ?? ["created_time"])
+  const text = formatOutput(
+    response.data,
+    params.response_format,
+    (data) => formatAsTable(data as object[], params.fields ?? ["created_time"]),
+    paging?.next_cursor ? { next_cursor: paging.next_cursor } : undefined
   );
 
-  const fullText = nextCursor
-    ? `${text}\n\nNext cursor: ${nextCursor}`
-    : text;
-
-  return { content: [{ type: "text" as const, text: truncateIfNeeded(fullText) }] };
+  return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
 
 const TOOL_ANNOTATIONS = {
@@ -120,7 +125,7 @@ export function registerMessagesTools(
           language_code: z.string().optional().describe("Filter by language code (e.g. 'en')"),
           message_ids: z
             .array(z.string())
-            .max(100)
+            .max(MAX_MESSAGE_IDS_PER_REQUEST)
             .optional()
             .describe("Fetch specific messages by ID (mutually exclusive with other filters)"),
           fields: z.array(z.string()).optional().describe("Fields to return"),
@@ -133,7 +138,7 @@ export function registerMessagesTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleGetMessages(client, cid, {
         profile_ids: params.profile_ids,
@@ -151,6 +156,6 @@ export function registerMessagesTools(
         cursor: params.cursor,
         response_format: params.response_format,
       });
-    }
+    })
   );
 }

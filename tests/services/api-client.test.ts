@@ -73,6 +73,16 @@ describe("handleApiError", () => {
     expect(handleApiError("something")).toContain("something");
   });
 
+  it("includes API error detail in 400 response", () => {
+    const error = {
+      isAxiosError: true,
+      response: { status: 400, headers: {}, data: { error: "reporting_period filter is required" } },
+    };
+    const msg = handleApiError(error);
+    expect(msg).toContain("Bad request");
+    expect(msg).toContain("reporting_period filter is required");
+  });
+
   it("includes API error message from response body", () => {
     const error = {
       isAxiosError: true,

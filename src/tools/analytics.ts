@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../services/api-client.js";
 import { buildEqFilter, buildDateRangeFilter } from "../services/filter-builder.js";
-import { formatAsTable, formatOutput, truncateIfNeeded } from "../services/formatter.js";
+import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
   ResponseFormatSchema,
   CustomerIdSchema,
@@ -11,6 +11,7 @@ import {
   SortOrderSchema,
   TimezoneSchema,
 } from "../schemas/common.js";
+import { ANALYTICS_MAX_DATE_RANGE_DAYS, MAX_PROFILES_PER_REQUEST } from "../constants.js";
 import type { SproutApiResponse, ToolResponse, ResponseFormat } from "../types.js";
 
 interface ProfileAnalyticsParams {
@@ -36,11 +37,29 @@ interface PostAnalyticsParams {
   response_format: ResponseFormat;
 }
 
+function validateDateRange(start: string, end: string): string | null {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const diffDays = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+  if (diffDays > ANALYTICS_MAX_DATE_RANGE_DAYS) {
+    return `Date range exceeds maximum of ${ANALYTICS_MAX_DATE_RANGE_DAYS} days for analytics.`;
+  }
+  if (diffDays < 0) {
+    return "start_date must be before end_date.";
+  }
+  return null;
+}
+
 export async function handleProfileAnalytics(
   client: ApiClient,
   customerId: number,
   params: ProfileAnalyticsParams
 ): Promise<ToolResponse> {
+  const rangeError = validateDateRange(params.start_date, params.end_date);
+  if (rangeError) {
+    return { isError: true, content: [{ type: "text" as const, text: rangeError }] };
+  }
+
   const filters = [
     buildEqFilter("customer_profile_id", params.profile_ids),
     buildDateRangeFilter("reporting_period", params.start_date, params.end_date, true),
@@ -58,8 +77,13 @@ export async function handleProfileAnalytics(
     body
   );
 
-  const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data, params.metrics)
+  const paging = response.paging as { current_page?: number; total_pages?: number } | undefined;
+  const dimensionCols = ["customer_profile_id", "reporting_period.by(day)"];
+  const text = formatOutput(
+    response.data,
+    params.response_format,
+    (data) => formatAsTable(data, [...dimensionCols, ...params.metrics]),
+    paging
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -69,6 +93,11 @@ export async function handlePostAnalytics(
   customerId: number,
   params: PostAnalyticsParams
 ): Promise<ToolResponse> {
+  const rangeError = validateDateRange(params.start_date, params.end_date);
+  if (rangeError) {
+    return { isError: true, content: [{ type: "text" as const, text: rangeError }] };
+  }
+
   const filters = [
     buildEqFilter("customer_profile_id", params.profile_ids),
     buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
@@ -90,12 +119,16 @@ export async function handlePostAnalytics(
     body
   );
 
+  const paging = response.paging as { current_page?: number; total_pages?: number } | undefined;
   const columns = [
     ...(params.fields ?? []),
     ...(params.metrics ?? []),
   ];
-  const text = formatOutput(response.data, params.response_format, (data) =>
-    formatAsTable(data, columns.length > 0 ? columns : ["created_time"])
+  const text = formatOutput(
+    response.data,
+    params.response_format,
+    (data) => formatAsTable(data, columns.length > 0 ? columns : ["created_time"]),
+    paging
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
@@ -120,7 +153,7 @@ export function registerAnalyticsTools(
       inputSchema: z
         .object({
           customer_id: CustomerIdSchema,
-          profile_ids: z.array(z.number()).min(1).max(100).describe("List of profile IDs to query"),
+          profile_ids: z.array(z.number()).min(1).max(MAX_PROFILES_PER_REQUEST).describe("List of profile IDs to query"),
           start_date: DateSchema.describe("Start of reporting period (inclusive)"),
           end_date: DateSchema.describe("End of reporting period (inclusive)"),
           metrics: z.array(z.string()).min(1).describe("Metric names to return"),
@@ -131,7 +164,7 @@ export function registerAnalyticsTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handleProfileAnalytics(client, cid, {
         profile_ids: params.profile_ids,
@@ -142,7 +175,7 @@ export function registerAnalyticsTools(
         limit: params.limit,
         response_format: params.response_format,
       });
-    }
+    })
   );
 
   server.registerTool(
@@ -153,7 +186,7 @@ export function registerAnalyticsTools(
       inputSchema: z
         .object({
           customer_id: CustomerIdSchema,
-          profile_ids: z.array(z.number()).min(1).max(100).describe("List of profile IDs to query"),
+          profile_ids: z.array(z.number()).min(1).max(MAX_PROFILES_PER_REQUEST).describe("List of profile IDs to query"),
           start_date: DateSchema.describe("Start of date range (inclusive)"),
           end_date: DateSchema.describe("End of date range (exclusive)"),
           metrics: z.array(z.string()).optional().describe("Metric names to return"),
@@ -167,7 +200,7 @@ export function registerAnalyticsTools(
         .strict(),
       annotations: TOOL_ANNOTATIONS,
     },
-    async (params) => {
+    async (params) => safeToolCall(() => {
       const cid = params.customer_id ?? defaultCustomerId;
       return handlePostAnalytics(client, cid, {
         profile_ids: params.profile_ids,
@@ -181,6 +214,6 @@ export function registerAnalyticsTools(
         limit: params.limit,
         response_format: params.response_format,
       });
-    }
+    })
   );
 }

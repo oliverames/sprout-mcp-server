@@ -76,6 +76,17 @@ describe("handleGetMessages", () => {
     );
   });
 
+  it("returns error when only start_date provided without end_date", async () => {
+    const client = mockApiClient([]);
+    const result = await handleGetMessages(client, 999, {
+      start_date: "2024-01-01",
+      response_format: "json",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("Both start_date and end_date");
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
   it("includes sort order in request", async () => {
     const client = mockApiClient([]);
     await handleGetMessages(client, 999, {

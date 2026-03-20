@@ -56,6 +56,60 @@ describe("handleProfileAnalytics", () => {
       })
     );
   });
+
+  it("includes dimension columns in markdown output", async () => {
+    const client = {
+      get: vi.fn(),
+      post: vi.fn().mockResolvedValue({
+        data: [{
+          dimensions: { "reporting_period.by(day)": "2024-01-01", customer_profile_id: 123 },
+          metrics: { impressions: 5000 },
+        }],
+        paging: { current_page: 1, total_pages: 1 },
+      }),
+      postFormData: vi.fn(),
+    };
+    const result = await handleProfileAnalytics(client, 999, {
+      profile_ids: [123],
+      start_date: "2024-01-01",
+      end_date: "2024-01-31",
+      metrics: ["impressions"],
+      response_format: "markdown",
+    });
+    expect(result.content[0]!.text).toContain("customer_profile_id");
+    expect(result.content[0]!.text).toContain("123");
+    expect(result.content[0]!.text).toContain("5000");
+  });
+
+  it("rejects date range exceeding 365 days", async () => {
+    const client = mockApiClient([]);
+    const result = await handleProfileAnalytics(client, 999, {
+      profile_ids: [123],
+      start_date: "2023-01-01",
+      end_date: "2024-06-01",
+      metrics: ["impressions"],
+      response_format: "json",
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("365 days");
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it("rejects inverted date range", async () => {
+    const client = mockApiClient([]);
+    const result = await handleProfileAnalytics(client, 999, {
+      profile_ids: [123],
+      start_date: "2024-06-01",
+      end_date: "2024-01-01",
+      metrics: ["impressions"],
+      response_format: "json",
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("before");
+    expect(client.post).not.toHaveBeenCalled();
+  });
 });
 
 describe("handlePostAnalytics", () => {
