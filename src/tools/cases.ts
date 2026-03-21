@@ -24,6 +24,9 @@ interface GetCasesParams {
   type?: string[];
   queue_id?: number;
   assigned_to?: string;
+  assigned_by?: string;
+  created_by?: string;
+  message_ids?: string[];
   tag_ids?: number[];
   sort_by?: "created_time" | "updated_time";
   sort_order?: "asc" | "desc";
@@ -106,6 +109,15 @@ export async function handleGetCases(
     if (params.assigned_to) {
       filters.push(buildEqFilter("assigned_to", [params.assigned_to]));
     }
+    if (params.assigned_by) {
+      filters.push(buildEqFilter("assigned_by", [params.assigned_by]));
+    }
+    if (params.created_by) {
+      filters.push(buildEqFilter("created_by", [params.created_by]));
+    }
+    if (params.message_ids && params.message_ids.length > 0) {
+      filters.push(buildEqFilter("message_id", params.message_ids));
+    }
     if (params.tag_ids && params.tag_ids.length > 0) {
       filters.push(buildEqFilter("tag_id", params.tag_ids));
     }
@@ -184,7 +196,10 @@ export function registerCasesTools(
             .optional()
             .describe("Filter by case type"),
           queue_id: z.number().optional().describe("Filter by queue ID"),
-          assigned_to: z.string().optional().describe("Filter by assignee"),
+          assigned_to: z.string().optional().describe("Filter by assignee (URN format)"),
+          assigned_by: z.string().optional().describe("Filter by who assigned the case (URN format)"),
+          created_by: z.string().optional().describe("Filter by who created the case (URN format)"),
+          message_ids: z.array(z.string()).optional().describe("Filter by related message GUIDs"),
           tag_ids: z.array(z.number()).optional().describe("Filter by tag IDs"),
           sort_by: z
             .enum(["created_time", "updated_time"])
@@ -212,6 +227,9 @@ export function registerCasesTools(
         type: params.type,
         queue_id: params.queue_id,
         assigned_to: params.assigned_to,
+        assigned_by: params.assigned_by,
+        created_by: params.created_by,
+        message_ids: params.message_ids,
         tag_ids: params.tag_ids,
         sort_by: params.sort_by,
         sort_order: params.sort_order,

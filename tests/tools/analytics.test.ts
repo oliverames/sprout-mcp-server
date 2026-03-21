@@ -8,6 +8,7 @@ import {
 function mockApiClient(responseData: unknown): ApiClient {
   return {
     get: vi.fn(),
+    getWithPolling: vi.fn(),
     post: vi.fn().mockResolvedValue({ data: responseData, paging: { current_page: 1, total_pages: 1 } }),
     postFormData: vi.fn(),
   };
@@ -60,6 +61,7 @@ describe("handleProfileAnalytics", () => {
   it("includes dimension columns in markdown output", async () => {
     const client = {
       get: vi.fn(),
+    getWithPolling: vi.fn(),
       post: vi.fn().mockResolvedValue({
         data: [{
           dimensions: { "reporting_period.by(day)": "2024-01-01", customer_profile_id: 123 },
@@ -137,6 +139,25 @@ describe("handlePostAnalytics", () => {
         fields: ["text", "created_time"],
         sort: ["created_time:asc"],
         timezone: "America/Chicago",
+      })
+    );
+  });
+
+  it("uses custom sort_field", async () => {
+    const client = mockApiClient([]);
+    await handlePostAnalytics(client, 999, {
+      profile_ids: [123],
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      sort_field: "guid",
+      sort_order: "asc",
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        sort: ["guid:asc"],
       })
     );
   });

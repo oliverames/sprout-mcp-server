@@ -21,9 +21,13 @@ interface GetMessagesParams {
   end_date?: string;
   post_types?: string[];
   tag_ids?: number[];
-  language_code?: string;
+  language_codes?: string[];
+  from_guids?: string[];
+  action_last_update_start?: string;
+  action_last_update_end?: string;
   message_ids?: string[];
   fields?: string[];
+  sort_by?: "created_time" | "likes";
   sort_order?: "asc" | "desc";
   timezone?: string;
   limit?: number;
@@ -42,6 +46,14 @@ export async function handleGetMessages(
     return {
       isError: true,
       content: [{ type: "text" as const, text: "Both start_date and end_date are required when using date filters." }],
+    };
+  }
+
+  if ((params.action_last_update_start && !params.action_last_update_end) ||
+      (!params.action_last_update_start && params.action_last_update_end)) {
+    return {
+      isError: true,
+      content: [{ type: "text" as const, text: "Both action_last_update_start and action_last_update_end are required when filtering by action time." }],
     };
   }
 
@@ -64,15 +76,22 @@ export async function handleGetMessages(
     if (params.tag_ids && params.tag_ids.length > 0) {
       filters.push(buildEqFilter("tag_id", params.tag_ids));
     }
-    if (params.language_code) {
-      filters.push(buildEqFilter("language_code", [params.language_code]));
+    if (params.language_codes && params.language_codes.length > 0) {
+      filters.push(buildEqFilter("language_code", params.language_codes));
+    }
+    if (params.from_guids && params.from_guids.length > 0) {
+      filters.push(buildEqFilter("from.guid", params.from_guids));
+    }
+    if (params.action_last_update_start && params.action_last_update_end) {
+      filters.push(buildDateRangeFilter("action_last_update_time", params.action_last_update_start, params.action_last_update_end, false));
     }
   }
 
+  const sortBy = params.sort_by ?? "created_time";
   const sortOrder = params.sort_order ?? "desc";
   const body: Record<string, unknown> = {
     filters,
-    sort: [`created_time:${sortOrder}`],
+    sort: [`${sortBy}:${sortOrder}`],
   };
 
   if (params.fields !== undefined) body.fields = params.fields;
@@ -122,13 +141,17 @@ export function registerMessagesTools(
           end_date: DateSchema.optional().describe("End of date range (exclusive)"),
           post_types: z.array(z.string()).optional().describe("Filter by post types"),
           tag_ids: z.array(z.number()).optional().describe("Filter by tag IDs"),
-          language_code: z.string().optional().describe("Filter by language code (e.g. 'en')"),
+          language_codes: z.array(z.string()).optional().describe("Filter by language codes (e.g. ['en', 'es'])"),
+          from_guids: z.array(z.string()).optional().describe("Filter by sender/external profile GUIDs"),
+          action_last_update_start: DateSchema.optional().describe("Start of action_last_update_time range (inclusive) — filters by last Sprout action (Reply, Tag, Like, Complete)"),
+          action_last_update_end: DateSchema.optional().describe("End of action_last_update_time range (exclusive)"),
           message_ids: z
             .array(z.string())
             .max(MAX_MESSAGE_IDS_PER_REQUEST)
             .optional()
             .describe("Fetch specific messages by ID (mutually exclusive with other filters)"),
           fields: z.array(z.string()).optional().describe("Fields to return"),
+          sort_by: z.enum(["created_time", "likes"]).default("created_time").optional().describe("Field to sort by"),
           sort_order: SortOrderSchema,
           timezone: TimezoneSchema,
           limit: z.number().int().min(1).max(100).default(50).describe("Results per page"),
@@ -147,9 +170,13 @@ export function registerMessagesTools(
         end_date: params.end_date,
         post_types: params.post_types,
         tag_ids: params.tag_ids,
-        language_code: params.language_code,
+        language_codes: params.language_codes,
+        from_guids: params.from_guids,
+        action_last_update_start: params.action_last_update_start,
+        action_last_update_end: params.action_last_update_end,
         message_ids: params.message_ids,
         fields: params.fields,
+        sort_by: params.sort_by,
         sort_order: params.sort_order,
         timezone: params.timezone,
         limit: params.limit,

@@ -14,6 +14,7 @@ import {
 function mockApiClient(data: unknown): ApiClient {
   return {
     get: vi.fn().mockResolvedValue({ data }),
+    getWithPolling: vi.fn(),
     post: vi.fn(),
     postFormData: vi.fn(),
   };
