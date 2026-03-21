@@ -8,7 +8,7 @@
 
 ## Architecture
 - TypeScript MCP server using stdio transport
-- 17 tools across 6 domains: metadata, analytics, messages, listening, publishing, cases
+- 20 tools across 6 domains: metadata, analytics, messages, listening, publishing, cases
 - Filter builder translates friendly params to Sprout's custom DSL
 - Dual auth: API token or OAuth M2M
 

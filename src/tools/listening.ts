@@ -5,6 +5,7 @@ import {
   buildEqFilter,
   buildDateRangeFilter,
   buildTextMatchFilter,
+  buildExistsFilter,
 } from "../services/filter-builder.js";
 import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
@@ -21,10 +22,19 @@ interface ListeningMessagesParams {
   topic_id: number;
   start_date: string;
   end_date: string;
-  sentiment?: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
-  network?: string;
+  sentiment?: "positive" | "negative" | "neutral" | "unclassified";
+  networks?: string[];
   text_search?: string;
+  language?: string[];
+  explicit_label?: boolean;
+  has_visual_media?: boolean;
+  distribution_type?: string[];
+  theme_ids?: number[];
+  location_country?: string[];
+  location_province?: string[];
+  location_city?: string[];
   fields: string[];
+  metrics?: string[];
   sort_by?: string;
   sort_order?: "asc" | "desc";
   timezone?: string;
@@ -37,9 +47,13 @@ interface ListeningMetricsParams {
   topic_id: number;
   start_date: string;
   end_date: string;
+  networks?: string[];
+  sentiment?: "positive" | "negative" | "neutral" | "unclassified";
+  text_search?: string;
   metrics?: string[];
   dimensions?: string[];
   timezone?: string;
+  limit?: number;
   response_format: ResponseFormat;
 }
 
@@ -55,11 +69,35 @@ export async function handleListeningMessages(
   if (params.sentiment) {
     filters.push(buildEqFilter("sentiment", [params.sentiment]));
   }
-  if (params.network) {
-    filters.push(buildEqFilter("network", [params.network]));
+  if (params.networks && params.networks.length > 0) {
+    filters.push(buildEqFilter("network", params.networks));
   }
   if (params.text_search) {
     filters.push(buildTextMatchFilter("text", params.text_search));
+  }
+  if (params.language && params.language.length > 0) {
+    filters.push(buildEqFilter("language", params.language));
+  }
+  if (params.explicit_label !== undefined) {
+    filters.push(buildExistsFilter("explicit_label", params.explicit_label));
+  }
+  if (params.has_visual_media !== undefined) {
+    filters.push(buildExistsFilter("visual_media", params.has_visual_media));
+  }
+  if (params.theme_ids && params.theme_ids.length > 0) {
+    filters.push(buildEqFilter("document.theme_ids", params.theme_ids));
+  }
+  if (params.distribution_type && params.distribution_type.length > 0) {
+    filters.push(buildEqFilter("distribution_type", params.distribution_type));
+  }
+  if (params.location_country && params.location_country.length > 0) {
+    filters.push(buildEqFilter("location.country", params.location_country));
+  }
+  if (params.location_province && params.location_province.length > 0) {
+    filters.push(buildEqFilter("location.province", params.location_province));
+  }
+  if (params.location_city && params.location_city.length > 0) {
+    filters.push(buildEqFilter("location.city", params.location_city));
   }
 
   const sortOrder = params.sort_order ?? "desc";
@@ -70,6 +108,7 @@ export async function handleListeningMessages(
   };
 
   body.fields = params.fields;
+  if (params.metrics !== undefined) body.metrics = params.metrics;
   if (params.timezone !== undefined) body.timezone = params.timezone;
   if (params.page !== undefined) body.page = params.page;
   if (params.limit !== undefined) body.limit = params.limit;
@@ -98,11 +137,22 @@ export async function handleListeningMetrics(
     buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
   ];
 
+  if (params.networks && params.networks.length > 0) {
+    filters.push(buildEqFilter("network", params.networks));
+  }
+  if (params.sentiment) {
+    filters.push(buildEqFilter("sentiment", [params.sentiment]));
+  }
+  if (params.text_search) {
+    filters.push(buildTextMatchFilter("text", params.text_search));
+  }
+
   const body: Record<string, unknown> = { filters };
 
   if (params.metrics !== undefined) body.metrics = params.metrics;
   if (params.dimensions !== undefined) body.dimensions = params.dimensions;
   if (params.timezone !== undefined) body.timezone = params.timezone;
+  if (params.limit !== undefined) body.limit = params.limit;
 
   const response = await client.post<SproutApiResponse<object>>(
     `/v1/${customerId}/listening/topics/${params.topic_id}/metrics`,
@@ -144,15 +194,24 @@ export function registerListeningTools(
           start_date: DateSchema.describe("Start of date range (inclusive)"),
           end_date: DateSchema.describe("End of date range (exclusive)"),
           sentiment: z
-            .enum(["POSITIVE", "NEGATIVE", "NEUTRAL"])
+            .enum(["positive", "negative", "neutral", "unclassified"])
             .optional()
             .describe("Filter by sentiment"),
-          network: z.string().optional().describe("Filter by network (e.g. 'twitter')"),
+          networks: z.array(z.string()).optional().describe("Filter by networks (e.g. ['TWITTER', 'INSTAGRAM', 'TIKTOK', 'BLUESKY'])"),
           text_search: z
             .string()
             .optional()
             .describe("Full-text search (supports OR operator)"),
+          language: z.array(z.string()).optional().describe("Filter by language codes (e.g. ['en', 'es'])"),
+          explicit_label: z.boolean().optional().describe("Filter by explicit content presence (true = has explicit content)"),
+          has_visual_media: z.boolean().optional().describe("Filter by visual media presence"),
+          theme_ids: z.array(z.number()).optional().describe("Filter by theme IDs within the topic"),
+          distribution_type: z.array(z.string()).optional().describe("Filter by distribution type"),
+          location_country: z.array(z.string()).optional().describe("Filter by country"),
+          location_province: z.array(z.string()).optional().describe("Filter by province/state"),
+          location_city: z.array(z.string()).optional().describe("Filter by city"),
           fields: z.array(z.string()).min(1).describe("Fields to return (at least one required, e.g. 'text', 'created_time', 'network')"),
+          metrics: z.array(z.string()).optional().describe("Metric names to return alongside fields (e.g. 'engagements', 'likes', 'from.followers_count')"),
           sort_by: z.string().optional().describe("Field to sort by"),
           sort_order: SortOrderSchema,
           timezone: TimezoneSchema,
@@ -170,9 +229,18 @@ export function registerListeningTools(
         start_date: params.start_date,
         end_date: params.end_date,
         sentiment: params.sentiment,
-        network: params.network,
+        networks: params.networks,
         text_search: params.text_search,
+        language: params.language,
+        explicit_label: params.explicit_label,
+        has_visual_media: params.has_visual_media,
+        theme_ids: params.theme_ids,
+        distribution_type: params.distribution_type,
+        location_country: params.location_country,
+        location_province: params.location_province,
+        location_city: params.location_city,
         fields: params.fields,
+        metrics: params.metrics,
         sort_by: params.sort_by,
         sort_order: params.sort_order,
         timezone: params.timezone,
@@ -195,12 +263,16 @@ export function registerListeningTools(
           topic_id: z.number().int().describe("Listening topic ID"),
           start_date: DateSchema.describe("Start of date range (inclusive)"),
           end_date: DateSchema.describe("End of date range (exclusive)"),
+          networks: z.array(z.string()).optional().describe("Filter metrics by networks"),
+          sentiment: z.enum(["positive", "negative", "neutral", "unclassified"]).optional().describe("Filter metrics by sentiment"),
+          text_search: z.string().optional().describe("Filter metrics by text search (supports OR operator)"),
           metrics: z.array(z.string()).optional().describe("Metric names to return"),
           dimensions: z
             .array(z.string())
             .optional()
             .describe("Dimension expressions (e.g. 'created_time.by(day)')"),
           timezone: TimezoneSchema,
+          limit: z.number().int().min(1).optional().describe("Maximum number of results"),
           response_format: ResponseFormatSchema,
         })
         .strict(),
@@ -212,9 +284,13 @@ export function registerListeningTools(
         topic_id: params.topic_id,
         start_date: params.start_date,
         end_date: params.end_date,
+        networks: params.networks,
+        sentiment: params.sentiment,
+        text_search: params.text_search,
         metrics: params.metrics,
         dimensions: params.dimensions,
         timezone: params.timezone,
+        limit: params.limit,
         response_format: params.response_format,
       });
     })

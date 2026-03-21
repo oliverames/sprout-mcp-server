@@ -30,6 +30,7 @@ interface PostAnalyticsParams {
   end_date: string;
   metrics?: string[];
   fields?: string[];
+  sort_field?: string;
   sort_order?: "asc" | "desc";
   timezone?: string;
   page?: number;
@@ -103,10 +104,11 @@ export async function handlePostAnalytics(
     buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
   ];
 
+  const sortField = params.sort_field ?? "created_time";
   const sortOrder = params.sort_order ?? "desc";
   const body: Record<string, unknown> = {
     filters,
-    sort: [`created_time:${sortOrder}`],
+    sort: [`${sortField}:${sortOrder}`],
   };
   if (params.metrics !== undefined) body.metrics = params.metrics;
   if (params.fields !== undefined) body.fields = params.fields;
@@ -191,6 +193,7 @@ export function registerAnalyticsTools(
           end_date: DateSchema.describe("End of date range (exclusive)"),
           metrics: z.array(z.string()).optional().describe("Metric names to return"),
           fields: z.array(z.string()).optional().describe("Post field names to return"),
+          sort_field: z.string().default("created_time").optional().describe("Field to sort by (default: 'created_time'; use 'guid' for cursor-based pagination)"),
           sort_order: SortOrderSchema,
           timezone: TimezoneSchema,
           page: PageSchema,
@@ -208,6 +211,7 @@ export function registerAnalyticsTools(
         end_date: params.end_date,
         metrics: params.metrics,
         fields: params.fields,
+        sort_field: params.sort_field,
         sort_order: params.sort_order,
         timezone: params.timezone,
         page: params.page,

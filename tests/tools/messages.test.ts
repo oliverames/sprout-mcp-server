@@ -5,6 +5,7 @@ import { handleGetMessages } from "../../src/tools/messages.js";
 function mockApiClient(responseData: unknown, paging = {}): ApiClient {
   return {
     get: vi.fn(),
+    getWithPolling: vi.fn(),
     post: vi.fn().mockResolvedValue({ data: responseData, paging }),
     postFormData: vi.fn(),
   };
@@ -87,6 +88,69 @@ describe("handleGetMessages", () => {
     expect(client.post).not.toHaveBeenCalled();
   });
 
+  it("includes language_codes as array filter", async () => {
+    const client = mockApiClient([]);
+    await handleGetMessages(client, 999, {
+      language_codes: ["en", "es", "fr"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "language_code.eq(en, es, fr)",
+        ]),
+      })
+    );
+  });
+
+  it("includes from_guids filter", async () => {
+    const client = mockApiClient([]);
+    await handleGetMessages(client, 999, {
+      from_guids: ["guid-1", "guid-2"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "from.guid.eq(guid-1, guid-2)",
+        ]),
+      })
+    );
+  });
+
+  it("returns error when only action_last_update_start provided without end", async () => {
+    const client = mockApiClient([]);
+    const result = await handleGetMessages(client, 999, {
+      action_last_update_start: "2024-01-01",
+      response_format: "json",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toContain("action_last_update_start and action_last_update_end");
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it("includes action_last_update_time filter", async () => {
+    const client = mockApiClient([]);
+    await handleGetMessages(client, 999, {
+      action_last_update_start: "2024-01-01",
+      action_last_update_end: "2024-02-01",
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "action_last_update_time.in(2024-01-01...2024-02-01)",
+        ]),
+      })
+    );
+  });
+
   it("includes sort order in request", async () => {
     const client = mockApiClient([]);
     await handleGetMessages(client, 999, {
@@ -98,6 +162,22 @@ describe("handleGetMessages", () => {
       expect.any(String),
       expect.objectContaining({
         sort: ["created_time:asc"],
+      })
+    );
+  });
+
+  it("supports sort_by likes", async () => {
+    const client = mockApiClient([]);
+    await handleGetMessages(client, 999, {
+      sort_by: "likes",
+      sort_order: "desc",
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        sort: ["likes:desc"],
       })
     );
   });

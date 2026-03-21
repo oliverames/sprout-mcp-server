@@ -5,6 +5,7 @@ import { handleGetCases } from "../../src/tools/cases.js";
 function mockApiClient(responseData: unknown, paging = {}): ApiClient {
   return {
     get: vi.fn(),
+    getWithPolling: vi.fn(),
     post: vi.fn().mockResolvedValue({ data: responseData, paging }),
     postFormData: vi.fn(),
   };
@@ -140,6 +141,29 @@ describe("handleGetCases", () => {
     expect(result.isError).toBe(true);
     expect(result.content[0]!.text).toContain("before");
     expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it("includes assigned_by, created_by, and message_ids filters", async () => {
+    const client = mockApiClient([]);
+    await handleGetCases(client, 999, {
+      start_date: "2024-01-01",
+      end_date: "2024-01-07",
+      assigned_by: "urn:sprout:user:123",
+      created_by: "urn:sprout:user:456",
+      message_ids: ["msg-1", "msg-2"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "assigned_by.eq(urn:sprout:user:123)",
+          "created_by.eq(urn:sprout:user:456)",
+          "message_id.eq(msg-1, msg-2)",
+        ]),
+      })
+    );
   });
 
   it("includes status, priority, type filters", async () => {

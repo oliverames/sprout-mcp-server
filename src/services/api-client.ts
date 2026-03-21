@@ -78,6 +78,7 @@ class RateLimiter {
 
 export interface ApiClient {
   get<T>(path: string): Promise<T>;
+  getWithPolling<T>(path: string): Promise<T>;
   post<T>(path: string, body: unknown): Promise<T>;
   postFormData<T>(path: string, formData: FormData): Promise<T>;
 }
@@ -91,6 +92,7 @@ export function createApiClient(auth: AuthProvider): ApiClient {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      "User-Agent": "sprout-mcp-server/1.1.0",
     },
   });
 
@@ -180,10 +182,18 @@ export function createApiClient(auth: AuthProvider): ApiClient {
       return requestWithRetry(() => instance.post<T>(path, body));
     },
 
+    async getWithPolling<T>(path: string): Promise<T> {
+      return pollFor202(() =>
+        instance.get<T>(path, {
+          validateStatus: (status: number) => (status >= 200 && status < 300) || status === 202,
+        })
+      );
+    },
+
     async postFormData<T>(path: string, formData: FormData): Promise<T> {
       return pollFor202(() =>
         instance.post<T>(path, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": undefined },
           validateStatus: (status: number) => (status >= 200 && status < 300) || status === 202,
         })
       );

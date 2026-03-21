@@ -8,6 +8,7 @@ import {
 function mockApiClient(responseData: unknown, paging = {}): ApiClient {
   return {
     get: vi.fn(),
+    getWithPolling: vi.fn(),
     post: vi.fn().mockResolvedValue({ data: responseData, paging }),
     postFormData: vi.fn(),
   };
@@ -20,7 +21,7 @@ describe("handleListeningMessages", () => {
       topic_id: 42,
       start_date: "2024-01-01",
       end_date: "2024-02-01",
-      sentiment: "POSITIVE",
+      sentiment: "positive",
       fields: ["text", "created_time"],
       response_format: "json",
     });
@@ -30,7 +31,7 @@ describe("handleListeningMessages", () => {
       expect.objectContaining({
         filters: expect.arrayContaining([
           "created_time.in(2024-01-01...2024-02-01)",
-          "sentiment.eq(POSITIVE)",
+          "sentiment.eq(positive)",
         ]),
       })
     );
@@ -75,13 +76,13 @@ describe("handleListeningMessages", () => {
     );
   });
 
-  it("includes network filter", async () => {
+  it("includes network filter with multiple values", async () => {
     const client = mockApiClient([]);
     await handleListeningMessages(client, 999, {
       topic_id: 42,
       start_date: "2024-01-01",
       end_date: "2024-02-01",
-      network: "twitter",
+      networks: ["TWITTER", "INSTAGRAM"],
       fields: ["text"],
       response_format: "json",
     });
@@ -90,8 +91,94 @@ describe("handleListeningMessages", () => {
       expect.any(String),
       expect.objectContaining({
         filters: expect.arrayContaining([
-          "network.eq(twitter)",
+          "network.eq(TWITTER, INSTAGRAM)",
         ]),
+      })
+    );
+  });
+
+  it("includes theme_ids filter", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMessages(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      theme_ids: [100, 200],
+      fields: ["text"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "document.theme_ids.eq(100, 200)",
+        ]),
+      })
+    );
+  });
+
+  it("includes language and location filters", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMessages(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      language: ["en", "es"],
+      location_country: ["US"],
+      fields: ["text"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "language.eq(en, es)",
+          "location.country.eq(US)",
+        ]),
+      })
+    );
+  });
+
+  it("includes explicit_label and visual_media exists filters", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMessages(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      explicit_label: true,
+      has_visual_media: false,
+      fields: ["text"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "explicit_label.exists(true)",
+          "visual_media.exists(false)",
+        ]),
+      })
+    );
+  });
+
+  it("includes metrics in request body", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMessages(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      fields: ["text"],
+      metrics: ["engagements", "likes"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        metrics: ["engagements", "likes"],
       })
     );
   });
@@ -114,6 +201,48 @@ describe("handleListeningMetrics", () => {
       expect.objectContaining({
         metrics: ["engagements", "messages_count"],
         dimensions: ["created_time.by(day)"],
+      })
+    );
+  });
+
+  it("includes network, sentiment, and text_search filters", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMetrics(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      networks: ["TWITTER"],
+      sentiment: "positive",
+      text_search: "sprout",
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "network.eq(TWITTER)",
+          "sentiment.eq(positive)",
+          "text.match(sprout)",
+        ]),
+      })
+    );
+  });
+
+  it("includes limit in request body", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMetrics(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      limit: 100,
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        limit: 100,
       })
     );
   });
