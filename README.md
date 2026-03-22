@@ -59,20 +59,20 @@ Query performance metrics across profiles and individual posts. Supports all maj
 | Tool | Description |
 |------|-------------|
 | `sprout_get_profile_analytics` | Aggregate profile metrics (impressions, engagements, followers) by day over a date range |
-| `sprout_get_post_analytics` | Post-level metrics and content fields with flexible sorting, timezone support, and pagination |
+| `sprout_get_post_analytics` | Post-level metrics and content fields with flexible sorting, timezone support, and cursor-based pagination for 10K+ results via `guid_cursor` |
 
 ### Messages — 1 tool
 
 | Tool | Description |
 |------|-------------|
-| `sprout_get_messages` | Query inbox messages with filters for profiles, groups, date ranges, post types, tags, language, sender GUIDs, and action timestamps. Sort by `created_time` or `likes`. Cursor-based pagination for large result sets |
+| `sprout_get_messages` | Query inbox messages with filters for profiles, groups, date ranges, post types, tags, language, sender GUIDs, and action timestamps. Cursor-based pagination for large result sets |
 
 ### Listening — 2 tools
 
 | Tool | Description |
 |------|-------------|
 | `sprout_get_listening_messages` | Retrieve individual listening messages for a topic with filters for sentiment, network, text search, language, location, themes, media presence, and distribution type. Supports requesting metrics alongside fields |
-| `sprout_get_listening_metrics` | Aggregated metrics for a listening topic with filters for network, sentiment, and text search. Supports dimensions for trend analysis |
+| `sprout_get_listening_metrics` | Aggregated metrics for a listening topic with filters for network, sentiment, text search, language, location, themes, and metric comparisons. Supports dimensions for trend analysis (by day, sentiment, network, etc.) |
 
 ### Publishing — 6 tools
 
@@ -80,7 +80,7 @@ Create draft content and manage media uploads of any size.
 
 | Tool | Description |
 |------|-------------|
-| `sprout_create_draft_post` | Create a draft post for one or more profiles with optional media, scheduling, and tags |
+| `sprout_create_draft_post` | Create a draft post for one or more profiles with optional text, media, scheduling, and tags |
 | `sprout_upload_media` | Upload media from a URL (images, video up to 50MB). Returns a `media_id` for post creation |
 | `sprout_get_post` | Retrieve a publishing post by ID |
 | `sprout_start_multipart_upload` | Start a multipart upload for large media files (>50MB) or URL downloads |
@@ -91,7 +91,7 @@ Create draft content and manage media uploads of any size.
 
 | Tool | Description |
 |------|-------------|
-| `sprout_get_cases` | Query support and feedback cases with filters for status, priority, type, queue, assignee, assigner, creator, related messages, tags, and date range |
+| `sprout_get_cases` | Query support and feedback cases with filters for status, priority, type, queue, assignee, assigner, creator, related messages, tags (include/exclude), and multiple date ranges via `additional_filters` |
 
 ---
 
@@ -286,7 +286,7 @@ These are Sprout Social API constraints, not server limitations:
 ```bash
 npm install          # Install dependencies
 npm run build        # Compile TypeScript
-npm test             # Run test suite (104 tests)
+npm test             # Run test suite (119 tests)
 npm run test:watch   # Watch mode
 npm run dev          # TypeScript watch mode
 npm start            # Start the server
@@ -304,7 +304,7 @@ src/
 ├── services/
 │   ├── auth.ts           # API token + OAuth M2M token management
 │   ├── api-client.ts     # HTTP client with retries, rate limiting, 202 polling
-│   ├── filter-builder.ts # Translates typed params → Sprout's filter DSL
+│   ├── filter-builder.ts # Translates typed params → Sprout's filter DSL (eq, neq, in, gt, match, exists)
 │   └── formatter.ts      # Markdown/JSON formatting + truncation
 └── tools/
     ├── metadata.ts       # 8 tools — account structure discovery
