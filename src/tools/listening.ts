@@ -33,6 +33,7 @@ interface ListeningMessagesParams {
   location_country?: string[];
   location_province?: string[];
   location_city?: string[];
+  additional_filters?: string[];
   fields: string[];
   metrics?: string[];
   sort_by?: string;
@@ -50,6 +51,15 @@ interface ListeningMetricsParams {
   networks?: string[];
   sentiment?: "positive" | "negative" | "neutral" | "unclassified";
   text_search?: string;
+  language?: string[];
+  explicit_label?: boolean;
+  has_visual_media?: boolean;
+  distribution_type?: string[];
+  theme_ids?: number[];
+  location_country?: string[];
+  location_province?: string[];
+  location_city?: string[];
+  additional_filters?: string[];
   metrics?: string[];
   dimensions?: string[];
   timezone?: string;
@@ -99,6 +109,9 @@ export async function handleListeningMessages(
   if (params.location_city && params.location_city.length > 0) {
     filters.push(buildEqFilter("location.city", params.location_city));
   }
+  if (params.additional_filters && params.additional_filters.length > 0) {
+    filters.push(...params.additional_filters);
+  }
 
   const sortOrder = params.sort_order ?? "desc";
   const sortBy = params.sort_by ?? "created_time";
@@ -146,6 +159,33 @@ export async function handleListeningMetrics(
   if (params.text_search) {
     filters.push(buildTextMatchFilter("text", params.text_search));
   }
+  if (params.language && params.language.length > 0) {
+    filters.push(buildEqFilter("language", params.language));
+  }
+  if (params.explicit_label !== undefined) {
+    filters.push(buildExistsFilter("explicit_label", params.explicit_label));
+  }
+  if (params.has_visual_media !== undefined) {
+    filters.push(buildExistsFilter("visual_media", params.has_visual_media));
+  }
+  if (params.distribution_type && params.distribution_type.length > 0) {
+    filters.push(buildEqFilter("distribution_type", params.distribution_type));
+  }
+  if (params.theme_ids && params.theme_ids.length > 0) {
+    filters.push(buildEqFilter("document.theme_ids", params.theme_ids));
+  }
+  if (params.location_country && params.location_country.length > 0) {
+    filters.push(buildEqFilter("location.country", params.location_country));
+  }
+  if (params.location_province && params.location_province.length > 0) {
+    filters.push(buildEqFilter("location.province", params.location_province));
+  }
+  if (params.location_city && params.location_city.length > 0) {
+    filters.push(buildEqFilter("location.city", params.location_city));
+  }
+  if (params.additional_filters && params.additional_filters.length > 0) {
+    filters.push(...params.additional_filters);
+  }
 
   const body: Record<string, unknown> = { filters };
 
@@ -190,7 +230,7 @@ export function registerListeningTools(
       inputSchema: z
         .object({
           customer_id: CustomerIdSchema,
-          topic_id: z.number().int().describe("Listening topic ID"),
+          topic_id: z.coerce.number().int().describe("Listening topic ID (accepts string or number)"),
           start_date: DateSchema.describe("Start of date range (inclusive)"),
           end_date: DateSchema.describe("End of date range (exclusive)"),
           sentiment: z
@@ -210,6 +250,7 @@ export function registerListeningTools(
           location_country: z.array(z.string()).optional().describe("Filter by country"),
           location_province: z.array(z.string()).optional().describe("Filter by province/state"),
           location_city: z.array(z.string()).optional().describe("Filter by city"),
+          additional_filters: z.array(z.string()).optional().describe("Extra Sprout DSL filter strings for advanced filtering (e.g. 'likes.gt(10)', 'engagements.gte(5)')"),
           fields: z.array(z.string()).min(1).describe("Fields to return (at least one required, e.g. 'text', 'created_time', 'network')"),
           metrics: z.array(z.string()).optional().describe("Metric names to return alongside fields (e.g. 'engagements', 'likes', 'from.followers_count')"),
           sort_by: z.string().optional().describe("Field to sort by"),
@@ -239,6 +280,7 @@ export function registerListeningTools(
         location_country: params.location_country,
         location_province: params.location_province,
         location_city: params.location_city,
+        additional_filters: params.additional_filters,
         fields: params.fields,
         metrics: params.metrics,
         sort_by: params.sort_by,
@@ -260,12 +302,21 @@ export function registerListeningTools(
       inputSchema: z
         .object({
           customer_id: CustomerIdSchema,
-          topic_id: z.number().int().describe("Listening topic ID"),
+          topic_id: z.coerce.number().int().describe("Listening topic ID (accepts string or number)"),
           start_date: DateSchema.describe("Start of date range (inclusive)"),
           end_date: DateSchema.describe("End of date range (exclusive)"),
           networks: z.array(z.string()).optional().describe("Filter metrics by networks"),
           sentiment: z.enum(["positive", "negative", "neutral", "unclassified"]).optional().describe("Filter metrics by sentiment"),
           text_search: z.string().optional().describe("Filter metrics by text search (supports OR operator)"),
+          language: z.array(z.string()).optional().describe("Filter by language codes (e.g. ['en', 'es'])"),
+          explicit_label: z.boolean().optional().describe("Filter by explicit content presence"),
+          has_visual_media: z.boolean().optional().describe("Filter by visual media presence"),
+          distribution_type: z.array(z.string()).optional().describe("Filter by distribution type"),
+          theme_ids: z.array(z.number()).optional().describe("Filter by theme IDs within the topic"),
+          location_country: z.array(z.string()).optional().describe("Filter by country"),
+          location_province: z.array(z.string()).optional().describe("Filter by province/state"),
+          location_city: z.array(z.string()).optional().describe("Filter by city"),
+          additional_filters: z.array(z.string()).optional().describe("Extra Sprout DSL filter strings for advanced filtering (e.g. 'likes.gt(10)')"),
           metrics: z.array(z.string()).optional().describe("Metric names to return"),
           dimensions: z
             .array(z.string())
@@ -287,6 +338,15 @@ export function registerListeningTools(
         networks: params.networks,
         sentiment: params.sentiment,
         text_search: params.text_search,
+        language: params.language,
+        explicit_label: params.explicit_label,
+        has_visual_media: params.has_visual_media,
+        distribution_type: params.distribution_type,
+        theme_ids: params.theme_ids,
+        location_country: params.location_country,
+        location_province: params.location_province,
+        location_city: params.location_city,
+        additional_filters: params.additional_filters,
         metrics: params.metrics,
         dimensions: params.dimensions,
         timezone: params.timezone,

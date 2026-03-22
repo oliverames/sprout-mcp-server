@@ -166,6 +166,48 @@ describe("handleGetCases", () => {
     );
   });
 
+  it("includes exclude_tag_ids as neq filter", async () => {
+    const client = mockApiClient([]);
+    await handleGetCases(client, 999, {
+      start_date: "2024-01-01",
+      end_date: "2024-01-07",
+      tag_ids: [100],
+      exclude_tag_ids: [200, 300],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "tag_id.eq(100)",
+          "tag_id.neq(200, 300)",
+        ]),
+      })
+    );
+  });
+
+  it("passes additional_filters as raw DSL strings", async () => {
+    const client = mockApiClient([]);
+    await handleGetCases(client, 999, {
+      start_date: "2024-01-01",
+      end_date: "2024-01-07",
+      date_field: "created_time",
+      additional_filters: ["updated_time.in(2024-01-03...2024-01-07)"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "created_time.in(2024-01-01...2024-01-07)",
+          "updated_time.in(2024-01-03...2024-01-07)",
+        ]),
+      })
+    );
+  });
+
   it("includes status, priority, type filters", async () => {
     const client = mockApiClient([]);
     await handleGetCases(client, 999, {

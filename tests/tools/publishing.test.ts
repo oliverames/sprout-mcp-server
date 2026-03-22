@@ -62,6 +62,21 @@ describe("handleCreateDraftPost", () => {
     );
   });
 
+  it("omits text from body when not provided (media-only post)", async () => {
+    const client = mockApiClient([]);
+    await handleCreateDraftPost(client, 999, {
+      profile_ids: [123],
+      group_id: 789,
+      media: [{ media_id: "uuid-1", media_type: "PHOTO" as const }],
+      response_format: "json",
+    });
+
+    const callBody = (client.post as ReturnType<typeof vi.fn>).mock.calls[0]![1] as Record<string, unknown>;
+    expect(callBody.text).toBeUndefined();
+    expect(callBody.is_draft).toBe(true);
+    expect(callBody.media).toEqual([{ media_id: "uuid-1", media_type: "PHOTO" }]);
+  });
+
   it("omits delivery when no scheduled_times", async () => {
     const client = mockApiClient([]);
     await handleCreateDraftPost(client, 999, {

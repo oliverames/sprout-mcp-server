@@ -164,6 +164,28 @@ describe("handleListeningMessages", () => {
     );
   });
 
+  it("passes additional_filters for metric-based filtering", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMessages(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      additional_filters: ["likes.gt(10)", "engagements.gte(5)"],
+      fields: ["text"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "likes.gt(10)",
+          "engagements.gte(5)",
+        ]),
+      })
+    );
+  });
+
   it("includes metrics in request body", async () => {
     const client = mockApiClient([]);
     await handleListeningMessages(client, 999, {
@@ -229,6 +251,26 @@ describe("handleListeningMetrics", () => {
     );
   });
 
+  it("passes additional_filters for metric-based filtering", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMetrics(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      additional_filters: ["impressions.lte(1000)"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "impressions.lte(1000)",
+        ]),
+      })
+    );
+  });
+
   it("includes limit in request body", async () => {
     const client = mockApiClient([]);
     await handleListeningMetrics(client, 999, {
@@ -243,6 +285,72 @@ describe("handleListeningMetrics", () => {
       expect.any(String),
       expect.objectContaining({
         limit: 100,
+      })
+    );
+  });
+
+  it("includes language and location filters", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMetrics(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      language: ["en", "es"],
+      location_country: ["US"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "language.eq(en, es)",
+          "location.country.eq(US)",
+        ]),
+      })
+    );
+  });
+
+  it("includes explicit_label and visual_media exists filters", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMetrics(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      explicit_label: false,
+      has_visual_media: true,
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "explicit_label.exists(false)",
+          "visual_media.exists(true)",
+        ]),
+      })
+    );
+  });
+
+  it("includes theme_ids and distribution_type filters", async () => {
+    const client = mockApiClient([]);
+    await handleListeningMetrics(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      theme_ids: [10, 20],
+      distribution_type: ["ORIGINAL"],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "document.theme_ids.eq(10, 20)",
+          "distribution_type.eq(ORIGINAL)",
+        ]),
       })
     );
   });

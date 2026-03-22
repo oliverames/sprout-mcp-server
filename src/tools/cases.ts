@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../services/api-client.js";
-import { buildEqFilter, buildDateRangeFilter } from "../services/filter-builder.js";
+import { buildEqFilter, buildNeqFilter, buildDateRangeFilter } from "../services/filter-builder.js";
 import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
   ResponseFormatSchema,
@@ -28,6 +28,8 @@ interface GetCasesParams {
   created_by?: string;
   message_ids?: string[];
   tag_ids?: number[];
+  exclude_tag_ids?: number[];
+  additional_filters?: string[];
   sort_by?: "created_time" | "updated_time";
   sort_order?: "asc" | "desc";
   timezone?: string;
@@ -121,6 +123,12 @@ export async function handleGetCases(
     if (params.tag_ids && params.tag_ids.length > 0) {
       filters.push(buildEqFilter("tag_id", params.tag_ids));
     }
+    if (params.exclude_tag_ids && params.exclude_tag_ids.length > 0) {
+      filters.push(buildNeqFilter("tag_id", params.exclude_tag_ids));
+    }
+    if (params.additional_filters && params.additional_filters.length > 0) {
+      filters.push(...params.additional_filters);
+    }
   }
 
   const sortBy = params.sort_by ?? "created_time";
@@ -140,7 +148,7 @@ export async function handleGetCases(
   );
 
   const paging = response.paging as { next_cursor?: string } | undefined;
-  const defaultColumns = ["case_id", "status", "priority", "type", "subject", "updated_time"];
+  const defaultColumns = ["case_id", "status", "priority", "type", "created_time", "updated_time"];
   const text = formatOutput(
     response.data,
     params.response_format,
@@ -179,10 +187,10 @@ export function registerCasesTools(
             .optional()
             .describe("Which date field to filter on"),
           case_ids: z
-            .array(z.number())
+            .array(z.coerce.number())
             .max(MAX_CASE_IDS_PER_REQUEST)
             .optional()
-            .describe("Fetch specific cases by ID (mutually exclusive with date filters)"),
+            .describe("Fetch specific cases by ID (mutually exclusive with date filters; accepts string or number IDs)"),
           status: z
             .array(z.enum(["OPEN", "IN_PROGRESS", "ON_HOLD", "CLOSED"]))
             .optional()
@@ -195,12 +203,14 @@ export function registerCasesTools(
             .array(z.enum(["GENERAL", "SUPPORT", "LEAD", "QUESTION", "FEEDBACK"]))
             .optional()
             .describe("Filter by case type"),
-          queue_id: z.number().optional().describe("Filter by queue ID"),
+          queue_id: z.coerce.number().optional().describe("Filter by queue ID (accepts string or number)"),
           assigned_to: z.string().optional().describe("Filter by assignee (URN format)"),
           assigned_by: z.string().optional().describe("Filter by who assigned the case (URN format)"),
           created_by: z.string().optional().describe("Filter by who created the case (URN format)"),
           message_ids: z.array(z.string()).optional().describe("Filter by related message GUIDs"),
-          tag_ids: z.array(z.number()).optional().describe("Filter by tag IDs"),
+          tag_ids: z.array(z.number()).optional().describe("Include only cases with these tag IDs"),
+          exclude_tag_ids: z.array(z.number()).optional().describe("Exclude cases with these tag IDs"),
+          additional_filters: z.array(z.string()).optional().describe("Extra Sprout DSL filter strings (e.g. 'updated_time.in(2025-01-05...2025-01-08)' to add a second date filter alongside the primary one)"),
           sort_by: z
             .enum(["created_time", "updated_time"])
             .default("created_time")
@@ -231,6 +241,8 @@ export function registerCasesTools(
         created_by: params.created_by,
         message_ids: params.message_ids,
         tag_ids: params.tag_ids,
+        exclude_tag_ids: params.exclude_tag_ids,
+        additional_filters: params.additional_filters,
         sort_by: params.sort_by,
         sort_order: params.sort_order,
         timezone: params.timezone,

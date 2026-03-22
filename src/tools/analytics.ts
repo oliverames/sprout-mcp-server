@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ApiClient } from "../services/api-client.js";
-import { buildEqFilter, buildDateRangeFilter } from "../services/filter-builder.js";
+import { buildEqFilter, buildDateRangeFilter, buildComparisonFilter } from "../services/filter-builder.js";
 import { formatAsTable, formatOutput, truncateIfNeeded, safeToolCall } from "../services/formatter.js";
 import {
   ResponseFormatSchema,
@@ -32,6 +32,7 @@ interface PostAnalyticsParams {
   fields?: string[];
   sort_field?: string;
   sort_order?: "asc" | "desc";
+  guid_cursor?: string;
   timezone?: string;
   page?: number;
   limit?: number;
@@ -99,10 +100,13 @@ export async function handlePostAnalytics(
     return { isError: true, content: [{ type: "text" as const, text: rangeError }] };
   }
 
-  const filters = [
+  const filters: string[] = [
     buildEqFilter("customer_profile_id", params.profile_ids),
     buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
   ];
+  if (params.guid_cursor) {
+    filters.push(buildComparisonFilter("guid", "gt", params.guid_cursor));
+  }
 
   const sortField = params.sort_field ?? "created_time";
   const sortOrder = params.sort_order ?? "desc";
@@ -195,6 +199,7 @@ export function registerAnalyticsTools(
           fields: z.array(z.string()).optional().describe("Post field names to return"),
           sort_field: z.string().default("created_time").optional().describe("Field to sort by (default: 'created_time'; use 'guid' for cursor-based pagination)"),
           sort_order: SortOrderSchema,
+          guid_cursor: z.string().optional().describe("Last guid from a previous response — used with sort_field='guid' and sort_order='asc' for cursor-based pagination beyond 10K results"),
           timezone: TimezoneSchema,
           page: PageSchema,
           limit: z.number().int().min(1).max(10000).default(50).describe("Results per page"),
@@ -213,6 +218,7 @@ export function registerAnalyticsTools(
         fields: params.fields,
         sort_field: params.sort_field,
         sort_order: params.sort_order,
+        guid_cursor: params.guid_cursor,
         timezone: params.timezone,
         page: params.page,
         limit: params.limit,

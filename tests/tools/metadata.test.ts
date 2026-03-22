@@ -38,6 +38,15 @@ describe("handleListProfiles", () => {
     expect(client.get).toHaveBeenCalledWith("/v1/999/metadata/customer");
     expect(result.content[0]!.text).toContain("instagram");
   });
+
+  it("includes native_id in markdown table columns", async () => {
+    const client = mockApiClient([
+      { customer_profile_id: 1, network_type: "twitter", name: "Acme", native_name: "acmecorp", native_id: "42793960" },
+    ]);
+    const result = await handleListProfiles(client, 999, { response_format: "markdown" });
+    expect(result.content[0]!.text).toContain("native_id");
+    expect(result.content[0]!.text).toContain("42793960");
+  });
 });
 
 describe("handleListGroups", () => {

@@ -46,6 +46,7 @@ export async function handleListProfiles(
       "network_type",
       "name",
       "native_name",
+      "native_id",
     ])
   );
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };

@@ -24,6 +24,16 @@ export function buildEqFilter(
 }
 
 /**
+ * Build a not-equal filter: field.neq(val1, val2, ...)
+ */
+export function buildNeqFilter(
+  field: string,
+  values: (string | number)[]
+): string {
+  return `${field}.neq(${values.join(", ")})`;
+}
+
+/**
  * Build a comparison filter: field.op(value)
  */
 export function buildComparisonFilter(
