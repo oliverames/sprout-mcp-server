@@ -14,23 +14,22 @@ export function buildDateRangeFilter(
 }
 
 /**
- * Build an equality filter: field.eq(val1, val2, ...)
+ * Build a set filter: field.op(val1, val2, ...)
  */
-export function buildEqFilter(
+function buildSetFilter(
   field: string,
+  op: "eq" | "neq",
   values: (string | number)[]
 ): string {
-  return `${field}.eq(${values.join(", ")})`;
+  return `${field}.${op}(${values.join(", ")})`;
 }
 
-/**
- * Build a not-equal filter: field.neq(val1, val2, ...)
- */
-export function buildNeqFilter(
-  field: string,
-  values: (string | number)[]
-): string {
-  return `${field}.neq(${values.join(", ")})`;
+export function buildEqFilter(field: string, values: (string | number)[]): string {
+  return buildSetFilter(field, "eq", values);
+}
+
+export function buildNeqFilter(field: string, values: (string | number)[]): string {
+  return buildSetFilter(field, "neq", values);
 }
 
 /**

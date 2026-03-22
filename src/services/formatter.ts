@@ -28,10 +28,10 @@ function resolveValue(record: Record<string, unknown>, col: string): unknown {
 
 function escapeCell(value: unknown): string {
   if (value == null) return "";
+  if (typeof value === "number") return String(value);
   const str = typeof value === "object" ? JSON.stringify(value) : String(value);
-  return str
-    .replace(/\|/g, "\\|")
-    .replace(/\n/g, " ");
+  if (!str.includes("|") && !str.includes("\n")) return str;
+  return str.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
 
 export function formatAsTable(
