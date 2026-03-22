@@ -27,7 +27,6 @@ interface GetMessagesParams {
   action_last_update_end?: string;
   message_ids?: string[];
   fields?: string[];
-  sort_by?: "created_time" | "likes";
   sort_order?: "asc" | "desc";
   timezone?: string;
   limit?: number;
@@ -87,11 +86,10 @@ export async function handleGetMessages(
     }
   }
 
-  const sortBy = params.sort_by ?? "created_time";
   const sortOrder = params.sort_order ?? "desc";
   const body: Record<string, unknown> = {
     filters,
-    sort: [`${sortBy}:${sortOrder}`],
+    sort: [`created_time:${sortOrder}`],
   };
 
   if (params.fields !== undefined) body.fields = params.fields;
@@ -151,7 +149,6 @@ export function registerMessagesTools(
             .optional()
             .describe("Fetch specific messages by ID (mutually exclusive with other filters)"),
           fields: z.array(z.string()).optional().describe("Fields to return"),
-          sort_by: z.enum(["created_time", "likes"]).default("created_time").optional().describe("Field to sort by"),
           sort_order: SortOrderSchema,
           timezone: TimezoneSchema,
           limit: z.number().int().min(1).max(100).default(50).describe("Results per page"),
@@ -176,7 +173,6 @@ export function registerMessagesTools(
         action_last_update_end: params.action_last_update_end,
         message_ids: params.message_ids,
         fields: params.fields,
-        sort_by: params.sort_by,
         sort_order: params.sort_order,
         timezone: params.timezone,
         limit: params.limit,

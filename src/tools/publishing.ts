@@ -16,7 +16,7 @@ interface MediaItem {
 interface CreateDraftPostParams {
   profile_ids: number[];
   group_id: number;
-  text: string;
+  text?: string;
   media?: MediaItem[];
   scheduled_times?: string[];
   tag_ids?: number[];
@@ -58,9 +58,10 @@ export async function handleCreateDraftPost(
   const body: Record<string, unknown> = {
     customer_profile_ids: params.profile_ids,
     group_id: params.group_id,
-    text: params.text,
     is_draft: true,
   };
+
+  if (params.text !== undefined) body.text = params.text;
 
   if (params.media !== undefined) body.media = params.media;
   if (params.scheduled_times !== undefined) {
@@ -194,7 +195,7 @@ export function registerPublishingTools(
           customer_id: CustomerIdSchema,
           profile_ids: z.array(z.number()).min(1).describe("Profile IDs to post to"),
           group_id: z.number().int().describe("Group ID"),
-          text: z.string().min(1).describe("Post text content"),
+          text: z.string().optional().describe("Post text content (optional for some networks when media is attached)"),
           media: z
             .array(
               z.object({

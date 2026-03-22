@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildDateRangeFilter,
   buildEqFilter,
+  buildNeqFilter,
   buildComparisonFilter,
   buildTextMatchFilter,
   buildExistsFilter,
@@ -33,6 +34,18 @@ describe("buildEqFilter", () => {
   it("handles string values", () => {
     expect(buildEqFilter("post_type", ["COMMENT", "DM"]))
       .toBe("post_type.eq(COMMENT, DM)");
+  });
+});
+
+describe("buildNeqFilter", () => {
+  it("builds single value", () => {
+    expect(buildNeqFilter("tag_id", [123]))
+      .toBe("tag_id.neq(123)");
+  });
+
+  it("builds multiple values", () => {
+    expect(buildNeqFilter("tag_id", [123, 456]))
+      .toBe("tag_id.neq(123, 456)");
   });
 });
 

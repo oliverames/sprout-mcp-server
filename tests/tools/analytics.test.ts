@@ -162,6 +162,29 @@ describe("handlePostAnalytics", () => {
     );
   });
 
+  it("adds guid.gt filter when guid_cursor is provided", async () => {
+    const client = mockApiClient([]);
+    await handlePostAnalytics(client, 999, {
+      profile_ids: [123],
+      start_date: "2024-01-01",
+      end_date: "2024-02-01",
+      sort_field: "guid",
+      sort_order: "asc",
+      guid_cursor: "102",
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "guid.gt(102)",
+        ]),
+        sort: ["guid:asc"],
+      })
+    );
+  });
+
   it("uses default sort order desc", async () => {
     const client = mockApiClient([]);
     await handlePostAnalytics(client, 999, {

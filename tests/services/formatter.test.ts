@@ -23,6 +23,16 @@ describe("formatAsTable", () => {
     expect(formatAsTable([], ["a"])).toBe("No data found.");
   });
 
+  it("renders arrays and objects as JSON in cells instead of [object Object]", () => {
+    const data = [
+      { name: "Acme", groups: [123, 456], meta: { code: "A" } },
+    ];
+    const result = formatAsTable(data, ["name", "groups", "meta"]);
+    expect(result).toContain("[123,456]");
+    expect(result).toContain('{"code":"A"}');
+    expect(result).not.toContain("[object Object]");
+  });
+
   it("escapes pipe characters and newlines in cell values", () => {
     const data = [
       { name: "Alice | Admin", bio: "Line 1\nLine 2" },
@@ -43,6 +53,22 @@ describe("formatAsTable", () => {
     ];
     const result = formatAsTable(data, ["impressions", "reactions"]);
     expect(result).toContain("| 3400 | 12 |");
+  });
+
+  it("resolves dotted field paths in nested objects", () => {
+    const data = [
+      { from: { name: "John", guid: "abc" }, text: "Hello" },
+    ];
+    const result = formatAsTable(data, ["from.name", "text"]);
+    expect(result).toContain("| John | Hello |");
+  });
+
+  it("resolves deeply nested dotted paths", () => {
+    const data = [
+      { internal: { sent_by: { email: "test@example.com" } } },
+    ];
+    const result = formatAsTable(data, ["internal.sent_by.email"]);
+    expect(result).toContain("| test@example.com |");
   });
 
   it("resolves top-level fields before checking nested", () => {

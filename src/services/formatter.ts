@@ -13,11 +13,23 @@ function resolveValue(record: Record<string, unknown>, col: string): unknown {
   if (metrics && col in metrics) return metrics[col];
   const dimensions = record.dimensions as Record<string, unknown> | undefined;
   if (dimensions && col in dimensions) return dimensions[col];
+  // Walk dotted paths for nested fields (e.g. "from.name", "internal.tags.id")
+  if (col.includes(".")) {
+    const parts = col.split(".");
+    let current: unknown = record;
+    for (const part of parts) {
+      if (current == null || typeof current !== "object") return undefined;
+      current = (current as Record<string, unknown>)[part];
+    }
+    return current;
+  }
   return undefined;
 }
 
 function escapeCell(value: unknown): string {
-  return String(value ?? "")
+  if (value == null) return "";
+  const str = typeof value === "object" ? JSON.stringify(value) : String(value);
+  return str
     .replace(/\|/g, "\\|")
     .replace(/\n/g, " ");
 }

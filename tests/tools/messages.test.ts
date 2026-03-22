@@ -166,18 +166,16 @@ describe("handleGetMessages", () => {
     );
   });
 
-  it("supports sort_by likes", async () => {
+  it("defaults sort to created_time:desc", async () => {
     const client = mockApiClient([]);
     await handleGetMessages(client, 999, {
-      sort_by: "likes",
-      sort_order: "desc",
       response_format: "json",
     });
 
     expect(client.post).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        sort: ["likes:desc"],
+        sort: ["created_time:desc"],
       })
     );
   });
