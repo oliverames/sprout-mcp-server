@@ -18,10 +18,7 @@ import {
 } from "../schemas/common.js";
 import type { SproutApiResponse, ToolResponse, ResponseFormat } from "../types.js";
 
-interface ListeningMessagesParams {
-  topic_id: number;
-  start_date: string;
-  end_date: string;
+interface ListeningFilterParams {
   sentiment?: "positive" | "negative" | "neutral" | "unclassified";
   networks?: string[];
   text_search?: string;
@@ -34,6 +31,12 @@ interface ListeningMessagesParams {
   location_province?: string[];
   location_city?: string[];
   additional_filters?: string[];
+}
+
+interface ListeningMessagesParams extends ListeningFilterParams {
+  topic_id: number;
+  start_date: string;
+  end_date: string;
   fields: string[];
   metrics?: string[];
   sort_by?: string;
@@ -44,22 +47,10 @@ interface ListeningMessagesParams {
   response_format: ResponseFormat;
 }
 
-interface ListeningMetricsParams {
+interface ListeningMetricsParams extends ListeningFilterParams {
   topic_id: number;
   start_date: string;
   end_date: string;
-  networks?: string[];
-  sentiment?: "positive" | "negative" | "neutral" | "unclassified";
-  text_search?: string;
-  language?: string[];
-  explicit_label?: boolean;
-  has_visual_media?: boolean;
-  distribution_type?: string[];
-  theme_ids?: number[];
-  location_country?: string[];
-  location_province?: string[];
-  location_city?: string[];
-  additional_filters?: string[];
   metrics?: string[];
   dimensions?: string[];
   timezone?: string;
@@ -67,15 +58,8 @@ interface ListeningMetricsParams {
   response_format: ResponseFormat;
 }
 
-export async function handleListeningMessages(
-  client: ApiClient,
-  customerId: number,
-  params: ListeningMessagesParams
-): Promise<ToolResponse> {
-  const filters: string[] = [
-    buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
-  ];
-
+function buildListeningFilters(params: ListeningFilterParams): string[] {
+  const filters: string[] = [];
   if (params.sentiment) {
     filters.push(buildEqFilter("sentiment", [params.sentiment]));
   }
@@ -94,11 +78,11 @@ export async function handleListeningMessages(
   if (params.has_visual_media !== undefined) {
     filters.push(buildExistsFilter("visual_media", params.has_visual_media));
   }
-  if (params.theme_ids && params.theme_ids.length > 0) {
-    filters.push(buildEqFilter("document.theme_ids", params.theme_ids));
-  }
   if (params.distribution_type && params.distribution_type.length > 0) {
     filters.push(buildEqFilter("distribution_type", params.distribution_type));
+  }
+  if (params.theme_ids && params.theme_ids.length > 0) {
+    filters.push(buildEqFilter("document.theme_ids", params.theme_ids));
   }
   if (params.location_country && params.location_country.length > 0) {
     filters.push(buildEqFilter("location.country", params.location_country));
@@ -112,6 +96,18 @@ export async function handleListeningMessages(
   if (params.additional_filters && params.additional_filters.length > 0) {
     filters.push(...params.additional_filters);
   }
+  return filters;
+}
+
+export async function handleListeningMessages(
+  client: ApiClient,
+  customerId: number,
+  params: ListeningMessagesParams
+): Promise<ToolResponse> {
+  const filters: string[] = [
+    buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
+    ...buildListeningFilters(params),
+  ];
 
   const sortOrder = params.sort_order ?? "desc";
   const sortBy = params.sort_by ?? "created_time";
@@ -148,44 +144,8 @@ export async function handleListeningMetrics(
 ): Promise<ToolResponse> {
   const filters: string[] = [
     buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
+    ...buildListeningFilters(params),
   ];
-
-  if (params.networks && params.networks.length > 0) {
-    filters.push(buildEqFilter("network", params.networks));
-  }
-  if (params.sentiment) {
-    filters.push(buildEqFilter("sentiment", [params.sentiment]));
-  }
-  if (params.text_search) {
-    filters.push(buildTextMatchFilter("text", params.text_search));
-  }
-  if (params.language && params.language.length > 0) {
-    filters.push(buildEqFilter("language", params.language));
-  }
-  if (params.explicit_label !== undefined) {
-    filters.push(buildExistsFilter("explicit_label", params.explicit_label));
-  }
-  if (params.has_visual_media !== undefined) {
-    filters.push(buildExistsFilter("visual_media", params.has_visual_media));
-  }
-  if (params.distribution_type && params.distribution_type.length > 0) {
-    filters.push(buildEqFilter("distribution_type", params.distribution_type));
-  }
-  if (params.theme_ids && params.theme_ids.length > 0) {
-    filters.push(buildEqFilter("document.theme_ids", params.theme_ids));
-  }
-  if (params.location_country && params.location_country.length > 0) {
-    filters.push(buildEqFilter("location.country", params.location_country));
-  }
-  if (params.location_province && params.location_province.length > 0) {
-    filters.push(buildEqFilter("location.province", params.location_province));
-  }
-  if (params.location_city && params.location_city.length > 0) {
-    filters.push(buildEqFilter("location.city", params.location_city));
-  }
-  if (params.additional_filters && params.additional_filters.length > 0) {
-    filters.push(...params.additional_filters);
-  }
 
   const body: Record<string, unknown> = { filters };
 

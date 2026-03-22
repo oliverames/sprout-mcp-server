@@ -108,8 +108,8 @@ export async function handlePostAnalytics(
     filters.push(buildComparisonFilter("guid", "gt", params.guid_cursor));
   }
 
-  const sortField = params.sort_field ?? "created_time";
-  const sortOrder = params.sort_order ?? "desc";
+  const sortField = params.guid_cursor ? "guid" : (params.sort_field ?? "created_time");
+  const sortOrder = params.guid_cursor ? "asc" : (params.sort_order ?? "desc");
   const body: Record<string, unknown> = {
     filters,
     sort: [`${sortField}:${sortOrder}`],
