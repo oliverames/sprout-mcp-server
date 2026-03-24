@@ -19,12 +19,6 @@
   A <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server that gives AI assistants complete access to the <a href="https://developers.sproutsocial.com/">Sprout Social API</a>. Manage analytics, inbox messages, social listening, content publishing, media uploads, and support cases — all through natural language.
 </p>
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/@oliverames/sprout-mcp-server"><img src="https://img.shields.io/npm/v/@oliverames/sprout-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
-  <a href="https://github.com/oliverames"><img src="https://img.shields.io/badge/Repository-source-0969da?style=flat-square&logo=github&logoColor=white" alt="Repository"></a>
-</p>
-
 ---
 
 ## What You Can Do
