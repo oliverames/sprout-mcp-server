@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://sproutsocial.com/favicon.ico" width="48" height="48" alt="Sprout Social" />
+  <img src="https://sproutsocial.com/favicon.ico" width="80" height="80" alt="Sprout Social">
 </p>
 
 <h1 align="center">Sprout Social MCP Server</h1>
@@ -9,17 +9,34 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@oliverames/sprout-mcp-server"><img src="https://img.shields.io/npm/v/%40oliverames%2Fsprout-mcp-server" alt="npm version" /></a>
-  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-brightgreen" alt="MCP compatible" /></a>
-  <a href="https://developers.sproutsocial.com/"><img src="https://img.shields.io/badge/Sprout_Social-API_v1-00A86B" alt="Sprout Social API" /></a>
-  <a href="#license"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" /></a>
+  <code>20 tools</code> &bull;
+  <code>6 domains</code> &bull;
+  <code>100% API coverage</code> &bull;
+  <code>11 networks</code>
 </p>
 
 <p align="center">
-  A <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server that gives AI assistants complete access to the <a href="https://developers.sproutsocial.com/">Sprout Social API</a>. Manage analytics, inbox messages, social listening, content publishing, media uploads, and support cases — all through natural language.
+  <a href="https://www.npmjs.com/package/@oliverames/sprout-mcp-server"><img src="https://img.shields.io/npm/v/%40oliverames%2Fsprout-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
+  <a href="https://www.buymeacoffee.com/oliverames"><img src="https://img.shields.io/badge/Buy_Me_a_Coffee-support-f5a542?style=flat-square&logo=buy-me-a-coffee&logoColor=white" alt="Buy Me a Coffee"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#20-tools-across-6-domains">Tools</a> &bull;
+  <a href="#configuration">Configuration</a> &bull;
+  <a href="#api-coverage">API Coverage</a>
 </p>
 
 ---
+
+A Model Context Protocol server that gives AI assistants complete access to the Sprout Social API — analytics, inbox messages, social listening, content publishing, media uploads, and support cases. Works with Claude, GPT, or any MCP-compatible client.
+
+## Why This Exists
+
+Sprout Social is the command center for social media teams managing multiple brands across multiple networks. But its power lives behind a dashboard that requires manual interaction for every query, every export, every draft. This server turns that dashboard into a conversation — ask your AI assistant to pull analytics, draft posts, search listening data, or triage support cases without switching tabs.
+
+Every endpoint in the Sprout Social API is covered. No gaps, no workarounds.
 
 ## What You Can Do
 
@@ -34,8 +51,6 @@ Ask your AI assistant to work with Sprout Social directly:
 ---
 
 ## 20 Tools Across 6 Domains
-
-Every endpoint in the Sprout Social API is covered — no gaps, no workarounds.
 
 ### Metadata — 8 tools
 

@@ -15,6 +15,31 @@
 - Filter builder translates friendly params to Sprout's custom DSL
 - Dual auth: API token or OAuth M2M
 
+## Source Structure
+
+```
+src/
+  index.ts              Entry point — auth, customer discovery, tool registration
+  constants.ts          API URLs, rate limits, validation constraints
+  types.ts              Shared TypeScript interfaces
+  schemas/common.ts     Reusable Zod schemas for tool input validation
+  services/
+    auth.ts             API token + OAuth M2M token management
+    api-client.ts       HTTP client with retries, rate limiting, 202 polling
+    filter-builder.ts   Translates typed params → Sprout's filter DSL
+    formatter.ts        Markdown/JSON formatting + truncation
+  tools/
+    metadata.ts         8 tools — account structure discovery
+    analytics.ts        2 tools — profile + post performance
+    messages.ts         1 tool  — inbox message queries
+    listening.ts        2 tools — topic messages + aggregated metrics
+    publishing.ts       6 tools — drafts, media upload (simple + multipart)
+    cases.ts            1 tool  — support case management
+tests/
+  tools/                Per-domain test files (mirrors src/tools/)
+  services/             Per-service test files (mirrors src/services/)
+```
+
 ## Key Patterns
 - All tool handlers are pure functions: `handler(client, customerId, params) → ToolResponse`
 - Tool registration is grouped by domain in `src/tools/*.ts` (analytics, cases, listening, messages, metadata, publishing)
@@ -44,4 +69,4 @@
 
 ## Version State
 - Current: 1.1.0 (published to npm)
-- Audit fixes from 2026-03-22 are on main but unpublished — bump to 1.2.0 when ready
+- Main branch may have unpublished changes — check `git log --oneline npm/v1.1.0..HEAD` before deciding on next version bump
