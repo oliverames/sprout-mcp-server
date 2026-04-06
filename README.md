@@ -163,6 +163,19 @@ export SPROUT_ORG_ID=your-org-id
 
 The server handles token acquisition and refresh automatically.
 
+### 1Password Integration
+
+If credentials are not set in the environment, the server automatically attempts to resolve them from [1Password CLI](https://developer.1password.com/docs/cli/):
+
+| Variable | 1Password Reference |
+|----------|-------------------|
+| `SPROUT_API_TOKEN` | `op://Development/Sprout API Token/credential` |
+| `SPROUT_CLIENT_ID` | `op://Development/Sprout OAuth Client/client_id` |
+| `SPROUT_CLIENT_SECRET` | `op://Development/Sprout OAuth Client/client_secret` |
+| `SPROUT_ORG_ID` | `op://Development/Sprout OAuth Client/org_id` |
+
+This means you can skip setting env vars entirely if you have `op` installed and a service account or session active. The fallback adds ~1-2s to startup and is silently skipped if 1Password is unavailable.
+
 ---
 
 ## Configuration
