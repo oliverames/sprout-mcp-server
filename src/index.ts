@@ -10,6 +10,7 @@ import { registerListeningTools } from "./tools/listening.js";
 import { registerPublishingTools } from "./tools/publishing.js";
 import { registerCasesTools } from "./tools/cases.js";
 import type { SproutApiResponse, SproutCustomer } from "./types.js";
+import { resolveApiKey } from "./op-fallback.js";
 
 async function main(): Promise<void> {
   // 1. Create MCP server (always starts, even without auth)
@@ -18,7 +19,13 @@ async function main(): Promise<void> {
     version: "1.1.0",
   });
 
-  // 2. Check authentication
+  // 2. Resolve credentials from 1Password if not already set
+  resolveApiKey("SPROUT_API_TOKEN", "op://Development/Sprout API Token/credential");
+  resolveApiKey("SPROUT_CLIENT_ID", "op://Development/Sprout OAuth Client/client_id");
+  resolveApiKey("SPROUT_CLIENT_SECRET", "op://Development/Sprout OAuth Client/client_secret");
+  resolveApiKey("SPROUT_ORG_ID", "op://Development/Sprout OAuth Client/org_id");
+
+  // 3. Check authentication
   const auth = createAuthProvider();
 
   if (!auth) {
