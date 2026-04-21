@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://sproutsocial.com/favicon.ico" width="80" height="80" alt="Sprout Social">
+  <img src="assets/icon.png" width="80" height="80" alt="Sprout Social">
 </p>
 
 <h1 align="center">Sprout Social MCP Server</h1>
@@ -17,12 +17,14 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@oliverames/sprout-mcp-server"><img src="https://img.shields.io/npm/v/%40oliverames%2Fsprout-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
+  <a href="https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.1.2"><img src="https://img.shields.io/github/v/release/oliverames/sprout-mcp-server?style=flat-square&color=f5a542&label=MCPB" alt="MCPB release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
   <a href="https://www.buymeacoffee.com/oliverames"><img src="https://img.shields.io/badge/Buy_Me_a_Coffee-support-f5a542?style=flat-square&logo=buy-me-a-coffee&logoColor=white" alt="Buy Me a Coffee"></a>
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#install-with-mcpb">MCPB Download</a> &bull;
   <a href="#20-tools-across-6-domains">Tools</a> &bull;
   <a href="#configuration">Configuration</a> &bull;
   <a href="#api-coverage">API Coverage</a>
@@ -111,6 +113,14 @@ Create draft content and manage media uploads of any size.
 ---
 
 ## Quick Start
+
+### Install with MCPB
+
+For Claude Desktop and other MCPB-compatible clients, download the local bundle from the [v1.1.2 release](https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.1.2):
+
+[Download `sprout-mcp-server-1.1.2.mcpb`](https://github.com/oliverames/sprout-mcp-server/releases/download/v1.1.2/sprout-mcp-server-1.1.2.mcpb)
+
+The bundle includes the Sprout Social favicon, production runtime dependencies, and setup prompts for API token or OAuth machine-to-machine credentials.
 
 ### Prerequisites
 
