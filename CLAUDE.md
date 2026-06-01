@@ -6,14 +6,15 @@
 - `npm run dev` — watch mode (tsc --watch)
 - `npm test` — run tests (`vitest run`)
 - `npm run test:watch` — tests in watch mode
-- `npm start` — run server (requires auth env vars)
+- `npm run login` — execute interactive user login flow
+- `npm start` — run server (uses static token, M2M OAuth, or saved user login)
 - `npm run publish:npm` — publish to npm as `@oliverames/sprout-mcp-server`
 
 ## Architecture
 - TypeScript MCP server using stdio transport
 - 20 tools across 6 domains: metadata, analytics, messages, listening, publishing, cases
 - Filter builder translates friendly params to Sprout's custom DSL
-- Dual auth: API token or OAuth M2M
+- Triple auth: API token, OAuth M2M, or Interactive User OAuth (zero-config persistence)
 
 ## Source Structure
 
