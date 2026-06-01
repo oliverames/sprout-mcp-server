@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   // 1. Create MCP server (always starts, even without auth)
   const server = new McpServer({
     name: "sprout-mcp-server",
-    version: "1.1.0",
+    version: "1.2.0",
   });
 
   // 2. Resolve credentials from 1Password if not already set
