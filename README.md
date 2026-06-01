@@ -17,7 +17,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@oliverames/sprout-mcp-server"><img src="https://img.shields.io/npm/v/%40oliverames%2Fsprout-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
-  <a href="https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.1.2"><img src="https://img.shields.io/github/v/release/oliverames/sprout-mcp-server?style=flat-square&color=f5a542&label=MCPB" alt="MCPB release"></a>
+  <a href="https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.2.0"><img src="https://img.shields.io/github/v/release/oliverames/sprout-mcp-server?style=flat-square&color=f5a542&label=MCPB" alt="MCPB release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
   <a href="https://www.buymeacoffee.com/oliverames"><img src="https://img.shields.io/badge/Buy_Me_a_Coffee-support-f5a542?style=flat-square&logo=buy-me-a-coffee&logoColor=white" alt="Buy Me a Coffee"></a>
 </p>
@@ -116,9 +116,9 @@ Create draft content and manage media uploads of any size.
 
 ### Install with MCPB
 
-For Claude Desktop and other MCPB-compatible clients, download the local bundle from the [v1.1.2 release](https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.1.2):
+For Claude Desktop and other MCPB-compatible clients, download the local bundle from the [v1.2.0 release](https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.2.0):
 
-[Download `sprout-mcp-server-1.1.2.mcpb`](https://github.com/oliverames/sprout-mcp-server/releases/download/v1.1.2/sprout-mcp-server-1.1.2.mcpb)
+[Download `sprout-mcp-server-1.2.0.mcpb`](https://github.com/oliverames/sprout-mcp-server/releases/download/v1.2.0/sprout-mcp-server-1.2.0.mcpb)
 
 The bundle includes the Sprout Social favicon, production runtime dependencies, and setup prompts for API token or OAuth machine-to-machine credentials.
 
