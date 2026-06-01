@@ -92,7 +92,7 @@ export function createApiClient(auth: AuthProvider): ApiClient {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      "User-Agent": "sprout-mcp-server/1.1.0",
+      "User-Agent": "sprout-mcp-server/1.2.0",
     },
   });
 
