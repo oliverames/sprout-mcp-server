@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "sprout-mcp-server",
   "display_name": "Sprout Social MCP Server",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "MCP server for Sprout Social analytics, publishing, listening, messages, and cases.",
   "author": {
     "name": "Oliver Ames",
@@ -65,13 +65,13 @@
     "sprout_client_id": {
       "type": "string",
       "title": "Sprout OAuth Client ID",
-      "description": "OAuth machine-to-machine client ID. Optional if using API token.",
+      "description": "OAuth client ID. Used for M2M auth and for interactive 'Sign in with Sprout' (run 'npm run login'). Optional if using an API token.",
       "required": false
     },
     "sprout_client_secret": {
       "type": "string",
       "title": "Sprout OAuth Client Secret",
-      "description": "OAuth machine-to-machine client secret. Optional if using API token.",
+      "description": "OAuth client secret. Required only for M2M auth. NOT needed for interactive 'Sign in with Sprout', which uses PKCE.",
       "required": false,
       "sensitive": true
     },

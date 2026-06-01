@@ -144,9 +144,9 @@ class OAuthUserBasedProvider implements AuthProvider {
       return this.cachedToken;
     }
 
-    if (!activeClientId || !activeClientSecret) {
+    if (!activeClientId) {
       throw new Error(
-        "Sprout Social MCP Server: Missing OAuth client credentials. Please set SPROUT_CLIENT_ID and SPROUT_CLIENT_SECRET, or run 'npm run login' to re-authenticate."
+        "Sprout Social MCP Server: Missing OAuth client credentials. Please set SPROUT_CLIENT_ID (and SPROUT_CLIENT_SECRET for a confidential client), or run 'npm run login' to re-authenticate."
       );
     }
 
@@ -155,8 +155,12 @@ class OAuthUserBasedProvider implements AuthProvider {
         grant_type: "refresh_token",
         refresh_token: tokenData.refresh_token,
         client_id: activeClientId,
-        client_secret: activeClientSecret,
       });
+      // Confidential clients include the secret; public/PKCE clients refresh
+      // with the client_id alone (the secret was never issued).
+      if (activeClientSecret) {
+        params.set("client_secret", activeClientSecret);
+      }
 
       const response = await axios.post<OAuthTokenResponse & { refresh_token?: string }>(
         OAUTH_TOKEN_ENDPOINT,
@@ -210,7 +214,10 @@ export function createAuthProvider(): AuthProvider | null {
     return new OAuthM2MProvider(clientId, clientSecret, orgId);
   }
 
-  if (clientId && clientSecret) {
+  // Interactive user login (Option B). A client ID alone is enough — the
+  // browser flow uses PKCE, so a public client needs no secret. A secret is
+  // still honored when present (confidential client).
+  if (clientId) {
     return new OAuthUserBasedProvider(clientId, clientSecret);
   }
 

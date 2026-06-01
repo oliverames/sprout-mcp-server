@@ -151,19 +151,19 @@ npm install && npm run build
 
 ## Authentication
 
-The server supports two authentication methods. Configure one via environment variables.
+There are two ways to connect. Pick the one that fits how the server runs.
 
-### Option 1: API Token
+### Option A — Token / machine auth (best for unattended automation)
 
-The simplest option. Generate a token in Sprout Social under **Settings → Global Features → API Page → API Token Management**.
+Use this when the server runs headless (CI, a scheduled job, a shared host).
+
+**A1. API token (simplest).** Generate a token in Sprout under **Settings → Global Features → API Page → API Token Management**.
 
 ```bash
 export SPROUT_API_TOKEN=your-token-here
 ```
 
-### Option 2: OAuth 2.0 Machine-to-Machine
-
-Recommended for production and automated workflows. Uses the client credentials grant.
+**A2. OAuth 2.0 machine-to-machine.** Client-credentials grant; the server acquires and refreshes the token automatically.
 
 ```bash
 export SPROUT_CLIENT_ID=your-client-id
@@ -171,25 +171,26 @@ export SPROUT_CLIENT_SECRET=your-client-secret
 export SPROUT_ORG_ID=your-org-id
 ```
 
-The server handles token acquisition and refresh automatically.
+### Option B — Sign in with Sprout (best for a person)
 
-### Option 3: Interactive User Login (Personal Account)
+Use this to connect your own Sprout account. You sign in at Sprout's real login page in the browser, so the server never sees your password and your normal 2FA/SSO applies. The interactive flow uses **PKCE**, so it needs only a client ID, with no client secret to configure or store.
 
-Perfect for using your own personal Sprout Social account with zero configuration required.
+1. Set your OAuth client ID (generate it under **Settings → Global Features → API → OAuth Client Management**):
+   ```bash
+   export SPROUT_CLIENT_ID=your-client-id
+   ```
+2. Run the login command and sign in when the browser opens:
+   ```bash
+   npm run login
+   ```
 
-First, execute the login command in your terminal:
-```bash
-npm run login
-```
-If you do not have client credentials configured in your environment or 1Password, the CLI will prompt you to enter your **Sprout OAuth Client ID** and **Sprout OAuth Client Secret** directly in the terminal (generate these under Sprout settings **Settings → Global Features → API → OAuth Client Management**). 
+The CLI starts a local callback server, opens your browser, and on success saves your session to `~/.sprout-mcp-auth.json`. After that, run the server with no further configuration:
 
-The CLI will spin up a local server, launch your browser, prompt you to log in, and securely save your configuration and tokens to `~/.sprout-mcp-auth.json`. 
-
-After logging in once, you can run the MCP server with **zero configuration**:
 ```bash
 npm start
 ```
-The server will automatically load your credentials from disk and handle token refreshing and rotation silently in the background.
+
+The server loads your saved session and refreshes tokens automatically in the background.
 
 ### 1Password Integration
 
