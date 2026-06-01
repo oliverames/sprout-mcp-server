@@ -7,6 +7,8 @@ import {
   handleStartMultipartUpload,
   handleContinueMultipartUpload,
   handleCompleteMultipartUpload,
+  handleDraftCampaign,
+  handleScheduleCampaignQueue,
 } from "../../src/tools/publishing.js";
 
 function mockApiClient(responseData: unknown): ApiClient {
@@ -219,5 +221,62 @@ describe("handleCompleteMultipartUpload", () => {
     );
     const parsed = JSON.parse(result.content[0]!.text);
     expect(parsed.media_id).toBe("media-789");
+  });
+});
+
+describe("handleDraftCampaign", () => {
+  it("creates custom draft posts across different profiles", async () => {
+    const client = {
+      get: vi.fn(),
+      getWithPolling: vi.fn(),
+      post: vi.fn().mockResolvedValue({ data: [{ id: "post-123" }] }),
+      postFormData: vi.fn(),
+    };
+
+    const result = await handleDraftCampaign(client, 999, {
+      group_id: 111,
+      posts: [
+        { profile_id: 12, text: "For Profile 12" },
+        { profile_id: 34, text: "For Profile 34" },
+      ],
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledTimes(2);
+    const parsed = JSON.parse(result.content[0]!.text);
+    expect(parsed).toEqual([
+      { profile_id: 12, status: "success", post_id: "post-123" },
+      { profile_id: 34, status: "success", post_id: "post-123" },
+    ]);
+  });
+});
+
+describe("handleScheduleCampaignQueue", () => {
+  it("sequentially schedules a list of draft posts at set intervals", async () => {
+    const client = {
+      get: vi.fn(),
+      getWithPolling: vi.fn(),
+      post: vi.fn().mockResolvedValue({ data: [{ id: "queue-post-99" }] }),
+      postFormData: vi.fn(),
+    };
+
+    const result = await handleScheduleCampaignQueue(client, 999, {
+      profile_ids: [12, 34],
+      group_id: 111,
+      posts: [
+        { text: "Post #1" },
+        { text: "Post #2" },
+      ],
+      start_date: "2024-06-30T18:00:00Z",
+      interval_days: 3,
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledTimes(2);
+    const parsed = JSON.parse(result.content[0]!.text);
+    expect(parsed[0]!.post_id).toBe("queue-post-99");
+    expect(parsed[1]!.post_id).toBe("queue-post-99");
+    expect(parsed[0]!.scheduled_time).toBe("2024-06-30T18:00:00.000Z");
+    expect(parsed[1]!.scheduled_time).toBe("2024-07-03T18:00:00.000Z");
   });
 });

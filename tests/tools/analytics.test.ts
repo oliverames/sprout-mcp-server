@@ -3,6 +3,8 @@ import type { ApiClient } from "../../src/services/api-client.js";
 import {
   handleProfileAnalytics,
   handlePostAnalytics,
+  handleCompilePerformanceReport,
+  handleCompareProfiles,
 } from "../../src/tools/analytics.js";
 
 function mockApiClient(responseData: unknown): ApiClient {
@@ -200,5 +202,57 @@ describe("handlePostAnalytics", () => {
         sort: ["created_time:desc"],
       })
     );
+  });
+});
+
+describe("handleCompilePerformanceReport", () => {
+  it("fetches both profile and post analytics", async () => {
+    const client = {
+      get: vi.fn(),
+      getWithPolling: vi.fn(),
+      post: vi.fn().mockResolvedValue({ data: [] }),
+      postFormData: vi.fn(),
+    };
+
+    await handleCompilePerformanceReport(client, 999, {
+      profile_ids: [123, 456],
+      start_date: "2024-01-01",
+      end_date: "2024-01-10",
+      metrics: ["impressions"],
+      post_limit: 5,
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("handleCompareProfiles", () => {
+  it("aggregates metrics locally and returns comparison data", async () => {
+    const client = {
+      get: vi.fn(),
+      getWithPolling: vi.fn(),
+      post: vi.fn().mockResolvedValue({
+        data: [
+          { customer_profile_id: 123, metrics: { impressions: 100 } },
+          { customer_profile_id: 456, metrics: { impressions: 200 } },
+        ],
+      }),
+      postFormData: vi.fn(),
+    };
+
+    const result = await handleCompareProfiles(client, 999, {
+      profile_ids: [123, 456],
+      start_date: "2024-01-01",
+      end_date: "2024-01-10",
+      metrics: ["impressions"],
+      response_format: "json",
+    });
+
+    const parsed = JSON.parse(result.content[0]!.text);
+    expect(parsed).toEqual([
+      { customer_profile_id: 123, impressions: 100 },
+      { customer_profile_id: 456, impressions: 200 },
+    ]);
   });
 });

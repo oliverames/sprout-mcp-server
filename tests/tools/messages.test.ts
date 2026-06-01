@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { ApiClient } from "../../src/services/api-client.js";
-import { handleGetMessages } from "../../src/tools/messages.js";
+import { handleGetMessages, handleGetAllMessages } from "../../src/tools/messages.js";
 
 function mockApiClient(responseData: unknown, paging = {}): ApiClient {
   return {
@@ -178,5 +178,29 @@ describe("handleGetMessages", () => {
         sort: ["created_time:desc"],
       })
     );
+  });
+});
+
+describe("handleGetAllMessages", () => {
+  it("auto-paginates until max_records is hit", async () => {
+    const client = {
+      get: vi.fn(),
+      getWithPolling: vi.fn(),
+      post: vi.fn()
+        .mockResolvedValueOnce({ data: [{ id: "m1" }], paging: { next_cursor: "c1" } })
+        .mockResolvedValueOnce({ data: [{ id: "m2" }], paging: {} }),
+      postFormData: vi.fn(),
+    };
+
+    const result = await handleGetAllMessages(client, 999, {
+      start_date: "2024-01-01",
+      end_date: "2024-01-10",
+      max_records: 5,
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledTimes(2);
+    const parsed = JSON.parse(result.content[0]!.text);
+    expect(parsed.length).toBe(2);
   });
 });

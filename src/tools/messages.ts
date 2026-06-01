@@ -113,6 +113,86 @@ export async function handleGetMessages(
   return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
 }
 
+interface GetAllMessagesParams {
+  profile_ids?: number[];
+  group_id?: number;
+  start_date: string;
+  end_date: string;
+  post_types?: string[];
+  tag_ids?: number[];
+  language_codes?: string[];
+  from_guids?: string[];
+  fields?: string[];
+  max_records: number;
+  response_format: ResponseFormat;
+}
+
+export async function handleGetAllMessages(
+  client: ApiClient,
+  customerId: number,
+  params: GetAllMessagesParams
+): Promise<ToolResponse> {
+  const filters: string[] = [
+    buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
+  ];
+
+  if (params.profile_ids && params.profile_ids.length > 0) {
+    filters.push(buildEqFilter("customer_profile_id", params.profile_ids));
+  }
+  if (params.group_id !== undefined) {
+    filters.push(buildEqFilter("group_id", [params.group_id]));
+  }
+  if (params.post_types && params.post_types.length > 0) {
+    filters.push(buildEqFilter("post_type", params.post_types));
+  }
+  if (params.tag_ids && params.tag_ids.length > 0) {
+    filters.push(buildEqFilter("tag_id", params.tag_ids));
+  }
+  if (params.language_codes && params.language_codes.length > 0) {
+    filters.push(buildEqFilter("language_code", params.language_codes));
+  }
+  if (params.from_guids && params.from_guids.length > 0) {
+    filters.push(buildEqFilter("from.guid", params.from_guids));
+  }
+
+  let allData: any[] = [];
+  let currentCursor: string | undefined;
+  const pageSize = 100;
+
+  do {
+    const body: Record<string, unknown> = {
+      filters,
+      sort: ["created_time:desc"],
+      limit: Math.min(pageSize, params.max_records - allData.length),
+    };
+    if (currentCursor) body.page_cursor = currentCursor;
+    if (params.fields) body.fields = params.fields;
+
+    const response = await client.post<SproutApiResponse<any>>(
+      `/v1/${customerId}/messages`,
+      body
+    );
+
+    allData.push(...response.data);
+    const paging = response.paging as { next_cursor?: string } | undefined;
+    currentCursor = paging?.next_cursor;
+
+    if (response.data.length === 0 || !currentCursor || allData.length >= params.max_records) {
+      break;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  } while (allData.length < params.max_records);
+
+  const text = formatOutput(
+    allData,
+    params.response_format,
+    (data) => formatAsTable(data as object[], params.fields ?? ["created_time"])
+  );
+
+  return { content: [{ type: "text" as const, text: truncateIfNeeded(text) }] };
+}
+
 const TOOL_ANNOTATIONS = {
   readOnlyHint: true,
   destructiveHint: false,
@@ -177,6 +257,47 @@ export function registerMessagesTools(
         timezone: params.timezone,
         limit: params.limit,
         cursor: params.cursor,
+        response_format: params.response_format,
+      });
+    })
+  );
+
+  server.registerTool(
+    "sprout_get_all_messages",
+    {
+      title: "Get All Messages",
+      description: "Retrieve all inbox messages within a date range by recursively paginating automatically in the background.",
+      inputSchema: z
+        .object({
+          customer_id: CustomerIdSchema,
+          profile_ids: z.array(z.number()).optional().describe("Filter by profile IDs"),
+          group_id: z.number().optional().describe("Filter by group ID"),
+          start_date: DateSchema.describe("Start of date range (inclusive)"),
+          end_date: DateSchema.describe("End of date range (exclusive)"),
+          post_types: z.array(z.string()).optional().describe("Filter by post types"),
+          tag_ids: z.array(z.number()).optional().describe("Filter by tag IDs"),
+          language_codes: z.array(z.string()).optional().describe("Filter by language codes (e.g. ['en', 'es'])"),
+          from_guids: z.array(z.string()).optional().describe("Filter by sender/external profile GUIDs"),
+          fields: z.array(z.string()).optional().describe("Fields to return"),
+          max_records: z.number().int().min(1).max(500).default(200).describe("Maximum number of messages to retrieve"),
+          response_format: ResponseFormatSchema,
+        })
+        .strict(),
+      annotations: TOOL_ANNOTATIONS,
+    },
+    async (params) => safeToolCall(() => {
+      const cid = params.customer_id ?? defaultCustomerId;
+      return handleGetAllMessages(client, cid, {
+        profile_ids: params.profile_ids,
+        group_id: params.group_id,
+        start_date: params.start_date,
+        end_date: params.end_date,
+        post_types: params.post_types,
+        tag_ids: params.tag_ids,
+        language_codes: params.language_codes,
+        from_guids: params.from_guids,
+        fields: params.fields,
+        max_records: params.max_records,
         response_format: params.response_format,
       });
     })

@@ -3,6 +3,7 @@ import type { ApiClient } from "../../src/services/api-client.js";
 import {
   handleListeningMessages,
   handleListeningMetrics,
+  handleAnalyzeListeningTrends,
 } from "../../src/tools/listening.js";
 
 function mockApiClient(responseData: unknown, paging = {}): ApiClient {
@@ -371,5 +372,25 @@ describe("handleListeningMetrics", () => {
         timezone: "America/Chicago",
       })
     );
+  });
+});
+
+describe("handleAnalyzeListeningTrends", () => {
+  it("queries aggregates for daily trend, sentiment, and network share", async () => {
+    const client = {
+      get: vi.fn(),
+      getWithPolling: vi.fn(),
+      post: vi.fn().mockResolvedValue({ data: [] }),
+      postFormData: vi.fn(),
+    };
+
+    await handleAnalyzeListeningTrends(client, 999, {
+      topic_id: 42,
+      start_date: "2024-01-01",
+      end_date: "2024-01-10",
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledTimes(3);
   });
 });
