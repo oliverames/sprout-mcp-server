@@ -1,0 +1,91 @@
+{
+  "manifest_version": "0.3",
+  "name": "sprout-mcp-server",
+  "display_name": "Sprout Social MCP Server",
+  "version": "1.2.0",
+  "description": "MCP server for Sprout Social analytics, publishing, listening, messages, and cases.",
+  "author": {
+    "name": "Oliver Ames",
+    "url": "https://github.com/oliverames"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oliverames/sprout-mcp-server.git"
+  },
+  "homepage": "https://github.com/oliverames/sprout-mcp-server#readme",
+  "documentation": "https://github.com/oliverames/sprout-mcp-server#readme",
+  "support": "https://github.com/oliverames/sprout-mcp-server/issues",
+  "icon": "assets/icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.js"
+      ],
+      "env": {
+        "SPROUT_API_TOKEN": "${user_config.sprout_api_token}",
+        "SPROUT_CLIENT_ID": "${user_config.sprout_client_id}",
+        "SPROUT_CLIENT_SECRET": "${user_config.sprout_client_secret}",
+        "SPROUT_ORG_ID": "${user_config.sprout_org_id}",
+        "SPROUT_CUSTOMER_ID": "${user_config.sprout_customer_id}"
+      }
+    }
+  },
+  "tools_generated": true,
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-tools",
+    "automation"
+  ],
+  "license": "MIT",
+  "privacy_policies": [
+    "https://sproutsocial.com/privacy-policy/"
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=16.0.0"
+    }
+  },
+  "user_config": {
+    "sprout_api_token": {
+      "type": "string",
+      "title": "Sprout API Token",
+      "description": "API token from Sprout Social API Token Management. Use this or OAuth credentials.",
+      "required": false,
+      "sensitive": true
+    },
+    "sprout_client_id": {
+      "type": "string",
+      "title": "Sprout OAuth Client ID",
+      "description": "OAuth machine-to-machine client ID. Optional if using API token.",
+      "required": false
+    },
+    "sprout_client_secret": {
+      "type": "string",
+      "title": "Sprout OAuth Client Secret",
+      "description": "OAuth machine-to-machine client secret. Optional if using API token.",
+      "required": false,
+      "sensitive": true
+    },
+    "sprout_org_id": {
+      "type": "string",
+      "title": "Sprout Organization ID",
+      "description": "Organization ID for OAuth machine-to-machine authentication.",
+      "required": false
+    },
+    "sprout_customer_id": {
+      "type": "string",
+      "title": "Sprout Customer ID",
+      "description": "Optional customer ID when the token has access to multiple customers.",
+      "required": false
+    }
+  }
+}

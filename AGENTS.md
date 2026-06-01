@@ -69,5 +69,5 @@ tests/
 - `SPROUT_CUSTOMER_ID` — optional, for multi-customer setups
 
 ## Version State
-- Current: 1.1.0 (published to npm)
-- Main branch may have unpublished changes — check `git log --oneline npm/v1.1.0..HEAD` before deciding on next version bump
+- Current: 1.2.0 (published to npm)
+- Main branch may have unpublished changes — check `git log --oneline npm/v1.2.0..HEAD` before deciding on next version bump
