@@ -252,4 +252,125 @@ export function registerCasesTools(
       });
     })
   );
+
+  server.registerTool(
+    "sprout_triage_support_cases",
+    {
+      title: "Triage Support Cases",
+      description: "Identifies, ranks, and prioritizes active cases that require urgent attention, highlighting unassigned and old critical cases.",
+      inputSchema: z
+        .object({
+          customer_id: CustomerIdSchema,
+          start_date: DateSchema.describe("Start of date range (inclusive)"),
+          end_date: DateSchema.describe("End of date range (inclusive); max range is 1 week"),
+          queue_id: z.coerce.number().optional().describe("Filter by queue ID"),
+          priority: z
+            .array(z.enum(["CRITICAL", "HIGH", "MEDIUM", "LOW"]))
+            .optional()
+            .describe("Filter by case priority"),
+          response_format: ResponseFormatSchema,
+        })
+        .strict(),
+      annotations: TOOL_ANNOTATIONS,
+    },
+    async (params) => safeToolCall(() => {
+      const cid = params.customer_id ?? defaultCustomerId;
+      return handleTriageSupportCases(client, cid, {
+        start_date: params.start_date,
+        end_date: params.end_date,
+        queue_id: params.queue_id,
+        priority: params.priority,
+        response_format: params.response_format,
+      });
+    })
+  );
+}
+
+interface TriageSupportCasesParams {
+  start_date: string;
+  end_date: string;
+  queue_id?: number;
+  priority?: Array<"CRITICAL" | "HIGH" | "MEDIUM" | "LOW">;
+  response_format: ResponseFormat;
+}
+
+export async function handleTriageSupportCases(
+  client: ApiClient,
+  customerId: number,
+  params: TriageSupportCasesParams
+): Promise<ToolResponse> {
+  const start = new Date(params.start_date);
+  const end = new Date(params.end_date);
+  const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+  if (diffDays < 0) {
+    return { isError: true, content: [{ type: "text" as const, text: "start_date must be before end_date." }] };
+  }
+  if (diffDays > CASES_MAX_DATE_RANGE_DAYS) {
+    return { isError: true, content: [{ type: "text" as const, text: `Date range exceeds maximum of 1 week (${CASES_MAX_DATE_RANGE_DAYS} days).` }] };
+  }
+
+  const filters: string[] = [
+    buildDateRangeFilter("updated_time", params.start_date, params.end_date, false),
+    buildEqFilter("status", ["OPEN", "IN_PROGRESS"]),
+  ];
+
+  if (params.priority && params.priority.length > 0) {
+    filters.push(buildEqFilter("priority", params.priority));
+  }
+  if (params.queue_id !== undefined) {
+    filters.push(buildEqFilter("queue_id", [params.queue_id]));
+  }
+
+  const response = await client.post<SproutApiResponse<any>>(
+    `/v1/${customerId}/cases/filter`,
+    {
+      filters,
+      sort: ["updated_time:desc"],
+      limit: 100,
+    }
+  );
+
+  const priorityWeight = {
+    CRITICAL: 4,
+    HIGH: 3,
+    MEDIUM: 2,
+    LOW: 1,
+    UNDEFINED: 0,
+  };
+
+  const sortedCases = [...response.data].sort((a, b) => {
+    const weightA = priorityWeight[a.priority as keyof typeof priorityWeight] ?? 0;
+    const weightB = priorityWeight[b.priority as keyof typeof priorityWeight] ?? 0;
+    if (weightA !== weightB) {
+      return weightB - weightA;
+    }
+    return new Date(a.updated_time).getTime() - new Date(b.updated_time).getTime();
+  });
+
+  const formattedTriage = sortedCases.map((c) => ({
+    case_id: c.case_id,
+    priority: c.priority,
+    status: c.status,
+    type: c.type,
+    updated_time: c.updated_time,
+    assigned_to: c.assigned_to ? c.assigned_to : "🔴 UNASSIGNED",
+  }));
+
+  if (params.response_format === "json") {
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(formattedTriage, null, 2) }],
+    };
+  }
+
+  const table = formatAsTable(formattedTriage, ["case_id", "priority", "status", "type", "updated_time", "assigned_to"]);
+  const reportText = [
+    `# Support Case Inbox Triage Escalation`,
+    `**Reporting Window**: ${params.start_date} to ${params.end_date}`,
+    ``,
+    `The following cases are ranked by urgency (Priority + Age, oldest unassigned first):`,
+    ``,
+    table,
+  ].join("\n");
+
+  return { content: [{ type: "text" as const, text: truncateIfNeeded(reportText) }] };
 }

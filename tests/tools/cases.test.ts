@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { ApiClient } from "../../src/services/api-client.js";
-import { handleGetCases } from "../../src/tools/cases.js";
+import { handleGetCases, handleTriageSupportCases } from "../../src/tools/cases.js";
 
 function mockApiClient(responseData: unknown, paging = {}): ApiClient {
   return {
@@ -229,5 +229,41 @@ describe("handleGetCases", () => {
         ]),
       })
     );
+  });
+});
+
+describe("handleTriageSupportCases", () => {
+  it("queries support cases and ranks them locally by priority weight", async () => {
+    const client = {
+      get: vi.fn(),
+      getWithPolling: vi.fn(),
+      post: vi.fn().mockResolvedValue({
+        data: [
+          { case_id: 1, priority: "HIGH", status: "OPEN", type: "SUPPORT", updated_time: "2024-01-05T00:00:00Z" },
+          { case_id: 2, priority: "CRITICAL", status: "OPEN", type: "SUPPORT", updated_time: "2024-01-06T00:00:00Z" },
+        ],
+      }),
+      postFormData: vi.fn(),
+    };
+
+    const result = await handleTriageSupportCases(client, 999, {
+      start_date: "2024-01-01",
+      end_date: "2024-01-07",
+      response_format: "json",
+    });
+
+    expect(client.post).toHaveBeenCalledWith(
+      "/v1/999/cases/filter",
+      expect.objectContaining({
+        filters: expect.arrayContaining([
+          "status.eq(OPEN, IN_PROGRESS)",
+        ]),
+      })
+    );
+
+    const parsed = JSON.parse(result.content[0]!.text);
+    // CRITICAL should be first
+    expect(parsed[0].case_id).toBe(2);
+    expect(parsed[1].case_id).toBe(1);
   });
 });

@@ -315,4 +315,115 @@ export function registerListeningTools(
       });
     })
   );
+
+  server.registerTool(
+    "sprout_analyze_listening_trends",
+    {
+      title: "Analyze Listening Trends",
+      description: "Compiles daily listening volume trends, sentiment distributions, and network share distributions for a listening topic.",
+      inputSchema: z
+        .object({
+          customer_id: CustomerIdSchema,
+          topic_id: z.coerce.number().int().describe("Listening topic ID (accepts string or number)"),
+          start_date: DateSchema.describe("Start of date range (inclusive)"),
+          end_date: DateSchema.describe("End of date range (exclusive)"),
+          response_format: ResponseFormatSchema,
+        })
+        .strict(),
+      annotations: TOOL_ANNOTATIONS,
+    },
+    async (params) => safeToolCall(() => {
+      const cid = params.customer_id ?? defaultCustomerId;
+      return handleAnalyzeListeningTrends(client, cid, {
+        topic_id: params.topic_id,
+        start_date: params.start_date,
+        end_date: params.end_date,
+        response_format: params.response_format,
+      });
+    })
+  );
+}
+
+interface AnalyzeListeningTrendsParams {
+  topic_id: number;
+  start_date: string;
+  end_date: string;
+  response_format: ResponseFormat;
+}
+
+export async function handleAnalyzeListeningTrends(
+  client: ApiClient,
+  customerId: number,
+  params: AnalyzeListeningTrendsParams
+): Promise<ToolResponse> {
+  const baseFilters = [
+    buildDateRangeFilter("created_time", params.start_date, params.end_date, false),
+  ];
+
+  const dailyResponse = await client.post<SproutApiResponse<any>>(
+    `/v1/${customerId}/listening/topics/${params.topic_id}/metrics`,
+    {
+      filters: baseFilters,
+      metrics: ["volume"],
+      dimensions: ["created_time.by(day)"],
+    }
+  );
+
+  const sentimentResponse = await client.post<SproutApiResponse<any>>(
+    `/v1/${customerId}/listening/topics/${params.topic_id}/metrics`,
+    {
+      filters: baseFilters,
+      metrics: ["volume"],
+      dimensions: ["sentiment"],
+    }
+  );
+
+  const networkResponse = await client.post<SproutApiResponse<any>>(
+    `/v1/${customerId}/listening/topics/${params.topic_id}/metrics`,
+    {
+      filters: baseFilters,
+      metrics: ["volume"],
+      dimensions: ["network"],
+    }
+  );
+
+  if (params.response_format === "json") {
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(
+            {
+              daily_trend: dailyResponse.data,
+              sentiment_breakdown: sentimentResponse.data,
+              network_breakdown: networkResponse.data,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+
+  const dailyTable = formatAsTable(dailyResponse.data, ["created_time.by(day)", "volume"]);
+  const sentimentTable = formatAsTable(sentimentResponse.data, ["sentiment", "volume"]);
+  const networkTable = formatAsTable(networkResponse.data, ["network", "volume"]);
+
+  const reportText = [
+    `# Social Listening Trend Analysis Report`,
+    `**Topic ID**: ${params.topic_id}`,
+    `**Analysis Window**: ${params.start_date} to ${params.end_date}`,
+    ``,
+    `## Daily Message Volume Trend`,
+    dailyTable,
+    ``,
+    `## Sentiment Breakdown`,
+    sentimentTable,
+    ``,
+    `## Network Distribution`,
+    networkTable,
+  ].join("\n");
+
+  return { content: [{ type: "text" as const, text: truncateIfNeeded(reportText) }] };
 }
