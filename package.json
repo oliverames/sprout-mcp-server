@@ -15,6 +15,7 @@
     "prepublishOnly": "npm run build",
     "publish:npm": "npm publish --access public",
     "start": "node dist/index.js",
+    "login": "tsc && node dist/login.js",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -35,6 +36,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
     "axios": "^1.7.9",
+    "open": "^11.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

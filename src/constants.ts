@@ -3,6 +3,9 @@ export const BASE_URL = "https://api.sproutsocial.com";
 export const OAUTH_TOKEN_ENDPOINT =
   "https://identity.sproutsocial.com/oauth2/84e39c75-d770-45d9-90a9-7b79e3037d2c/v1/token";
 
+export const OAUTH_AUTH_ENDPOINT =
+  "https://identity.sproutsocial.com/oauth2/84e39c75-d770-45d9-90a9-7b79e3037d2c/v1/authorize";
+
 // Sprout API: 60 requests/min hard limit, we cap at 55 to stay safe
 export const RATE_LIMIT_SOFT_CAP = 55;
 
