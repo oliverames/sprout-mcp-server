@@ -1,5 +1,24 @@
 # Worklog
 
+## 2026-06-01 — PKCE "Sign in with Sprout" (Option B); live login blocked on real OAuth client
+
+**What changed**: Added an interactive user-login path using PKCE (S256) alongside the existing token/M2M auth, presented as two clear options (A: API token or OAuth M2M; B: "Sign in with Sprout"). New `src/services/pkce.ts` (`createPkcePair`: 32-byte base64url verifier + S256 challenge) with unit tests. `login.ts` now sends `code_challenge`/`code_challenge_method=S256` on authorize and `code_verifier` on token exchange; client secret is optional. `auth.ts`: `OAuthUserBasedProvider` refreshes with `client_id` alone when no secret is present (public client); `createAuthProvider` accepts a client-id-only public client. Updated `index.ts` auth-status message, `manifest.json`, `.env.example`, and README to the two-option model. Bumped to 1.3.0. Commit `c2942d1`, pushed to origin/main.
+
+**Verification**: `tsc` clean; 138/138 vitest pass (134 prior + 4 new PKCE/public-client tests). Confirmed in compiled output: `dist/login.js` carries `code_challenge_method=S256` + `code_verifier`; `dist/services/auth.js` shows the relaxed `if (!activeClientId)` guard + conditional `client_secret`. Preserved existing refresh contracts (`client_id&client_secret` adjacency; "Missing OAuth client credentials" throw).
+
+**Decisions made**:
+- Two-option auth, NOT a port of the app's internal login. Declined to reimplement/replay the mobile email+password+reCAPTCHA flow or to capture-and-replay internal session traffic: those target the undocumented `app.sproutsocial.com`/`cactus` surface, handle raw passwords, and route around Sprout's sanctioned credential model. PKCE delivers the same "just sign in" UX on the supported Okta surface (`identity.sproutsocial.com/oauth2/{authServerId}/v1/...`).
+- PKCE makes Option B a public client: only a client ID is needed, no secret shipped in the MCPB.
+
+**Left off at**: Code complete, tested, pushed. Live login validation is BLOCKED on a real Sprout Okta OAuth client. No `0oa...` client ID or self-serve API token was available this session; the Development vault still has only "npm Sprout Publish Token" (the "Sprout OAuth Client" item from the 2026-04-06 TODO was never created). The Google `default_web_client_id` from the decompiled APK is NOT a Sprout login client — probing Sprout's Okta authorize endpoint with it returned `invalid_request`. Chrome DevTools MCP was attached and ready for the live watch once a real credential exists.
+
+**Open questions**:
+- Does the operator have self-serve access to API Token Management (Option A1) or OAuth Client Management (to mint a public `0oa...` client with `http://localhost:3000/callback` whitelisted)? That is the unblock.
+- Refresh `scope` requirement still unverified live — needs a real session to confirm whether Okta wants `scope` on the `refresh_token` grant.
+- 1.3.0 is git-only; not yet published to npm.
+
+---
+
 ## 2026-04-06 — 1Password CLI fallback for credential resolution
 
 **What changed**: Added automatic 1Password CLI fallback to credential resolution at startup. When environment variables are not set, the server attempts to resolve them via `op read` from the Development vault before failing. Uses `execFileSync` (Node) or `exec.Command` (Go) for shell-safe execution with a 10s timeout. Silent no-op if 1Password CLI is unavailable. Updated README to document the integration with `op://` reference paths. Part of a broader session that also touched ynab-mcp-server, imagerelay-mcp-server, meta-mcp-server, sprout-mcp-server, and ames-unifi-mcp.
