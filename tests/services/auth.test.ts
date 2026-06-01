@@ -232,5 +232,37 @@ describe("createAuthProvider", () => {
       const provider = createAuthProvider();
       await expect(provider!.getToken()).rejects.toThrow("Missing OAuth client credentials");
     });
+
+    it("refreshes a public (PKCE) client with client_id only and never sends a client_secret", async () => {
+      vi.unstubAllEnvs();
+      vi.stubEnv("SPROUT_CLIENT_ID", "public-client-id"); // no secret, no org → user-based public client
+      vi.spyOn(fs, "existsSync").mockReturnValue(true);
+      vi.spyOn(fs, "readFileSync").mockReturnValue(
+        JSON.stringify({
+          client_id: "public-client-id",
+          access_token: "old-access-token",
+          refresh_token: "file-refresh-token",
+          expires_at: Date.now() - 3600 * 1000, // expired → force refresh
+        })
+      );
+      vi.spyOn(fs, "writeFileSync").mockImplementation(() => {});
+
+      const axios = await import("axios");
+      const mockPost = vi.fn().mockResolvedValue({
+        data: { access_token: "new-access-token", refresh_token: "new-refresh", expires_in: 3600 },
+      });
+      vi.mocked(axios.default).post = mockPost;
+
+      const provider = createAuthProvider();
+      expect(provider!.constructor.name).toBe("OAuthUserBasedProvider");
+
+      const token = await provider!.getToken();
+      expect(token).toBe("new-access-token");
+
+      const body = mockPost.mock.calls[0]![1] as string;
+      expect(body).toContain("grant_type=refresh_token");
+      expect(body).toContain("client_id=public-client-id");
+      expect(body).not.toContain("client_secret");
+    });
   });
 });

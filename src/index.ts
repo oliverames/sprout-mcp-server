@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   // 1. Create MCP server (always starts, even without auth)
   const server = new McpServer({
     name: "sprout-mcp-server",
-    version: "1.2.0",
+    version: "1.3.0",
   });
 
   // 2. Resolve credentials from 1Password if not already set
@@ -39,14 +39,15 @@ async function main(): Promise<void> {
         content: [{
           type: "text" as const,
           text: "⚠️ Sprout Social MCP server is running but not authenticated.\n\n" +
-            "To connect, set one of these in your Claude Code environment:\n\n" +
-            "Option 1 — Static API token:\n" +
-            "  SPROUT_API_TOKEN=your-token-here\n\n" +
-            "Option 2 — OAuth M2M credentials:\n" +
-            "  SPROUT_CLIENT_ID=your-client-id\n" +
-            "  SPROUT_CLIENT_SECRET=your-client-secret\n" +
-            "  SPROUT_ORG_ID=your-org-id\n\n" +
-            "After setting credentials, restart Claude Code to pick up the changes."
+            "There are two ways to connect:\n\n" +
+            "Option A — Token / machine auth (best for unattended automation):\n" +
+            "  • Static API token:  SPROUT_API_TOKEN=your-token\n" +
+            "  • OAuth M2M:         SPROUT_CLIENT_ID + SPROUT_CLIENT_SECRET + SPROUT_ORG_ID\n\n" +
+            "Option B — Sign in with Sprout (best for a person):\n" +
+            "  1. Set SPROUT_CLIENT_ID (no client secret needed — this flow uses PKCE).\n" +
+            "  2. Run `npm run login` and sign in at Sprout's login page in your browser.\n" +
+            "     Your session is saved locally and refreshed automatically.\n\n" +
+            "After connecting, restart Claude Code to pick up the changes."
         }]
       })
     );

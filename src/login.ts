@@ -10,8 +10,10 @@ import axios from "axios";
 import open from "open";
 import { OAUTH_AUTH_ENDPOINT, OAUTH_TOKEN_ENDPOINT } from "./constants.js";
 import { resolveApiKey } from "./op-fallback.js";
+import { createPkcePair } from "./services/pkce.js";
 
-// Make sure 1Password fallback runs if needed
+// Make sure 1Password fallback runs if needed.
+// The client secret is optional — the interactive flow uses PKCE.
 resolveApiKey("SPROUT_CLIENT_ID", "op://Development/Sprout OAuth Client/client_id");
 resolveApiKey("SPROUT_CLIENT_SECRET", "op://Development/Sprout OAuth Client/client_secret");
 
@@ -21,23 +23,19 @@ const TOKEN_PATH = path.join(os.homedir(), ".sprout-mcp-auth.json");
 
 async function runLogin() {
   let clientId = process.env.SPROUT_CLIENT_ID;
-  let clientSecret = process.env.SPROUT_CLIENT_SECRET;
+  // Client secret is OPTIONAL. With PKCE, a public client needs only a client ID.
+  // If a secret is present (a confidential client), we still send it on exchange.
+  const clientSecret = process.env.SPROUT_CLIENT_SECRET;
 
-  // 1. Prompt for credentials if they are missing
-  if (!clientId || !clientSecret) {
-    console.log("\n🔑 Sprout Social OAuth credentials not found in environment or 1Password.");
-    console.log("Please enter your Sprout OAuth Client details (from Sprout Settings > Global Features > API):\n");
+  // 1. Prompt for the client ID if it is missing.
+  if (!clientId) {
+    console.log("\n🔑 Sprout OAuth Client ID not found in environment or 1Password.");
+    console.log("Enter your Sprout OAuth Client ID (from Sprout Settings > Global Features > API).");
+    console.log("No client secret is required for interactive login — this flow uses PKCE.\n");
 
     const rl = readline.createInterface({ input, output });
     try {
-      if (!clientId) {
-        clientId = await rl.question("Enter Sprout OAuth Client ID: ");
-        clientId = clientId.trim();
-      }
-      if (!clientSecret) {
-        clientSecret = await rl.question("Enter Sprout OAuth Client Secret: ");
-        clientSecret = clientSecret.trim();
-      }
+      clientId = (await rl.question("Enter Sprout OAuth Client ID: ")).trim();
     } catch (err: any) {
       console.error("\n❌ Error reading input:", err.message);
       process.exit(1);
@@ -46,11 +44,13 @@ async function runLogin() {
     }
   }
 
-  if (!clientId || !clientSecret) {
-    console.error("\n❌ Error: Both Client ID and Client Secret are required to log in.\n");
+  if (!clientId) {
+    console.error("\n❌ Error: a Client ID is required to log in.\n");
     process.exit(1);
   }
 
+  // PKCE: prove we initiated the flow without shipping a secret.
+  const { verifier, challenge } = createPkcePair();
   const state = crypto.randomBytes(16).toString("hex");
 
   const server = http.createServer(async (req, res) => {
@@ -79,8 +79,13 @@ async function runLogin() {
           code: code as string,
           redirect_uri: REDIRECT_URI,
           client_id: clientId!,
-          client_secret: clientSecret!,
+          code_verifier: verifier,
         });
+        // Confidential clients (a secret was provided) also send it.
+        // Public/PKCE clients omit it — the code_verifier proves the exchange.
+        if (clientSecret) {
+          params.set("client_secret", clientSecret);
+        }
 
         const response = await axios.post(OAUTH_TOKEN_ENDPOINT, params.toString(), {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -142,7 +147,7 @@ async function runLogin() {
   });
 
   server.listen(PORT, () => {
-    const authUrl = `${OAUTH_AUTH_ENDPOINT}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid%20offline_access&state=${state}`;
+    const authUrl = `${OAUTH_AUTH_ENDPOINT}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid%20offline_access&state=${state}&code_challenge=${challenge}&code_challenge_method=S256`;
 
     console.log(`\nStarting local authentication server on port ${PORT}...`);
     console.log("Opening your browser to authenticate with Sprout Social...");
