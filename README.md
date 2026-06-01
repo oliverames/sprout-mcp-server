@@ -173,6 +173,24 @@ export SPROUT_ORG_ID=your-org-id
 
 The server handles token acquisition and refresh automatically.
 
+### Option 3: Interactive User Login (Personal Account)
+
+Perfect for using your own personal Sprout Social account with zero configuration required.
+
+First, execute the login command in your terminal:
+```bash
+npm run login
+```
+If you do not have client credentials configured in your environment or 1Password, the CLI will prompt you to enter your **Sprout OAuth Client ID** and **Sprout OAuth Client Secret** directly in the terminal (generate these under Sprout settings **Settings → Global Features → API → OAuth Client Management**). 
+
+The CLI will spin up a local server, launch your browser, prompt you to log in, and securely save your configuration and tokens to `~/.sprout-mcp-auth.json`. 
+
+After logging in once, you can run the MCP server with **zero configuration**:
+```bash
+npm start
+```
+The server will automatically load your credentials from disk and handle token refreshing and rotation silently in the background.
+
 ### 1Password Integration
 
 If credentials are not set in the environment, the server automatically attempts to resolve them from [1Password CLI](https://developer.1password.com/docs/cli/):
