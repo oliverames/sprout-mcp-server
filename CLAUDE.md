@@ -14,7 +14,7 @@
 - TypeScript MCP server using stdio transport
 - 20 tools across 6 domains: metadata, analytics, messages, listening, publishing, cases
 - Filter builder translates friendly params to Sprout's custom DSL
-- Triple auth: API token, OAuth M2M, or Interactive User OAuth (zero-config persistence)
+- Triple auth: API token, OAuth M2M, or Interactive User OAuth via PKCE (public client, no client secret needed; zero-config persistence)
 
 ## Source Structure
 
@@ -69,5 +69,6 @@ tests/
 - `SPROUT_CUSTOMER_ID` — optional, for multi-customer setups
 
 ## Version State
-- Current: 1.2.0 (published to npm)
+- Current: 1.3.0 (committed to main; NOT yet published to npm — 1.2.0 is the latest published)
 - Main branch may have unpublished changes — check `git log --oneline npm/v1.2.0..HEAD` before deciding on next version bump
+- 1.3.0 adds PKCE-based interactive login (Option B). Live login is unvalidated: no real Sprout Okta OAuth client (`0oa...`) or API token has been available to test against (see WORKLOG 2026-06-01)
