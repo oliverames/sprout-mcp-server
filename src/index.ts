@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createAuthProvider } from "./services/auth.js";
+import { createAuthProvider, type AuthProvider } from "./services/auth.js";
 import { createApiClient } from "./services/api-client.js";
 import { registerMetadataTools } from "./tools/metadata.js";
 import { registerAnalyticsTools } from "./tools/analytics.js";
@@ -12,11 +12,36 @@ import { registerCasesTools } from "./tools/cases.js";
 import type { SproutApiResponse, SproutCustomer } from "./types.js";
 import { resolveApiKey } from "./op-fallback.js";
 
+class MissingAuthProvider implements AuthProvider {
+  async getToken(): Promise<string> {
+    throw new Error(
+      "Sprout Social MCP server is not authenticated. Set SPROUT_API_TOKEN, set SPROUT_CLIENT_ID + SPROUT_CLIENT_SECRET + SPROUT_ORG_ID, or run npm run login."
+    );
+  }
+}
+
+function authStatusMessage(authenticated: boolean): string {
+  if (authenticated) {
+    return "✅ Sprout Social MCP server is authenticated and the full tool catalog is registered.";
+  }
+
+  return "⚠️ Sprout Social MCP server is running but not authenticated.\n\n" +
+    "There are two ways to connect:\n\n" +
+    "Option A — Token / machine auth (best for unattended automation):\n" +
+    "  • Static API token:  SPROUT_API_TOKEN=your-token\n" +
+    "  • OAuth M2M:         SPROUT_CLIENT_ID + SPROUT_CLIENT_SECRET + SPROUT_ORG_ID\n\n" +
+    "Option B — Sign in with Sprout (best for a person):\n" +
+    "  1. Set SPROUT_CLIENT_ID (no client secret needed — this flow uses PKCE).\n" +
+    "  2. Run `npm run login` and sign in at Sprout's login page in your browser.\n" +
+    "     Your session is saved locally and refreshed automatically.\n\n" +
+    "The full Sprout tool catalog is still registered for discovery, but API tools will fail until authentication is configured.";
+}
+
 async function main(): Promise<void> {
   // 1. Create MCP server (always starts, even without auth)
   const server = new McpServer({
     name: "sprout-mcp-server",
-    version: "1.3.0",
+    version: "1.3.1",
   });
 
   // 2. Resolve credentials from 1Password if not already set
@@ -27,39 +52,23 @@ async function main(): Promise<void> {
 
   // 3. Check authentication
   const auth = createAuthProvider();
+  const authenticated = !!auth;
 
-  if (!auth) {
-    // No credentials — register a single tool that explains what's needed
-    console.error("Sprout Social MCP Server: no authentication configured. Starting in unauthenticated mode.");
-    server.tool(
-      "sprout_auth_status",
-      "Check Sprout Social authentication status and get setup instructions",
-      {},
-      async () => ({
-        content: [{
-          type: "text" as const,
-          text: "⚠️ Sprout Social MCP server is running but not authenticated.\n\n" +
-            "There are two ways to connect:\n\n" +
-            "Option A — Token / machine auth (best for unattended automation):\n" +
-            "  • Static API token:  SPROUT_API_TOKEN=your-token\n" +
-            "  • OAuth M2M:         SPROUT_CLIENT_ID + SPROUT_CLIENT_SECRET + SPROUT_ORG_ID\n\n" +
-            "Option B — Sign in with Sprout (best for a person):\n" +
-            "  1. Set SPROUT_CLIENT_ID (no client secret needed — this flow uses PKCE).\n" +
-            "  2. Run `npm run login` and sign in at Sprout's login page in your browser.\n" +
-            "     Your session is saved locally and refreshed automatically.\n\n" +
-            "After connecting, restart Claude Code to pick up the changes."
-        }]
-      })
-    );
+  server.tool(
+    "sprout_auth_status",
+    "Check Sprout Social authentication status and get setup instructions",
+    {},
+    async () => ({
+      content: [{
+        type: "text" as const,
+        text: authStatusMessage(authenticated),
+      }]
+    })
+  );
 
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    console.error("Sprout Social MCP Server running (unauthenticated mode)");
-    return;
-  }
-
-  // 3. Authenticated — set up API client and discover customer
-  const client = createApiClient(auth);
+  // 3. Set up API client and discover customer when authentication is present.
+  // Missing auth still registers the full tool catalog so tools remain discoverable.
+  const client = createApiClient(auth ?? new MissingAuthProvider());
   let defaultCustomerId: number;
 
   const envCustomerId = process.env.SPROUT_CUSTOMER_ID;
@@ -69,7 +78,7 @@ async function main(): Promise<void> {
       throw new Error(`Invalid SPROUT_CUSTOMER_ID: "${envCustomerId}" is not a number.`);
     }
     console.error(`Using customer ID from env: ${defaultCustomerId}`);
-  } else {
+  } else if (authenticated) {
     const response = await client.get<SproutApiResponse<SproutCustomer>>(
       "/v1/metadata/client"
     );
@@ -88,6 +97,9 @@ async function main(): Promise<void> {
         `Multiple customers found. Set SPROUT_CUSTOMER_ID to one of:\n${list}`
       );
     }
+  } else {
+    defaultCustomerId = 0;
+    console.error("Sprout Social MCP Server: no authentication configured. Registering all tools in discovery-only mode.");
   }
 
   // 4. Register all tools
