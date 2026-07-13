@@ -5,56 +5,58 @@
 <h1 align="center">Sprout Social MCP Server</h1>
 
 <p align="center">
-  <strong>Full Sprout Social API coverage for AI-powered social media management</strong>
+  <strong>Sprout Social analytics, publishing, listening, messages, and cases through MCP</strong>
 </p>
 
 <p align="center">
-  <code>20 tools</code> &bull;
-  <code>6 domains</code> &bull;
-  <code>100% API coverage</code> &bull;
+  <code>28 tools</code> &bull;
+  <code>6 API domains</code> &bull;
   <code>11 networks</code>
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@oliverames/sprout-mcp-server"><img src="https://img.shields.io/npm/v/%40oliverames%2Fsprout-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
-  <a href="https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.2.0"><img src="https://img.shields.io/github/v/release/oliverames/sprout-mcp-server?style=flat-square&color=f5a542&label=MCPB" alt="MCPB release"></a>
+  <a href="https://github.com/oliverames/sprout-mcp-server/releases"><img src="https://img.shields.io/github/v/release/oliverames/sprout-mcp-server?style=flat-square&color=f5a542" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
   <a href="https://github.com/oliverames"><img src="https://img.shields.io/badge/Repository-source-0969da?style=flat-square&logo=github&logoColor=white" alt="Repository"></a>
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#install-with-mcpb">MCPB Download</a> &bull;
-  <a href="#20-tools-across-6-domains">Tools</a> &bull;
+  <a href="#28-tools-across-6-api-domains">Tools</a> &bull;
   <a href="#configuration">Configuration</a> &bull;
-  <a href="#api-coverage">API Coverage</a>
+  <a href="#tool-coverage">Tool Coverage</a>
 </p>
 
 ---
 
-A Model Context Protocol server that gives AI assistants complete access to the Sprout Social API — analytics, inbox messages, social listening, content publishing, media uploads, and support cases. Works with Claude, GPT, or any MCP-compatible client.
+A Model Context Protocol server for Sprout Social analytics, inbox messages, social listening, content publishing, media uploads, and support cases. It works with Claude, GPT, and other MCP clients.
 
-## Why This Exists
+## Why this exists
 
-Sprout Social is the command center for social media teams managing multiple brands across multiple networks. But its power lives behind a dashboard that requires manual interaction for every query, every export, every draft. This server turns that dashboard into a conversation — ask your AI assistant to pull analytics, draft posts, search listening data, or triage support cases without switching tabs.
+Sprout Social's API can answer questions and create drafts without a trip through the dashboard for each operation. This server makes those calls available to MCP clients and adds a few workflows for common reporting, campaign, and case-triage jobs.
 
-Every endpoint in the Sprout Social API is covered. No gaps, no workarounds.
-
-## What You Can Do
+## What you can do
 
 Ask your AI assistant to work with Sprout Social directly:
 
-- **"How did our Instagram perform last month?"** — Pull profile-level impressions, engagements, and follower growth across any date range
-- **"Show me our top posts on LinkedIn this quarter"** — Query post-level analytics sorted by engagement metrics
-- **"What are people saying about our brand?"** — Search social listening topics for sentiment, volume, and trending themes
-- **"Draft a post announcing our product launch across all channels"** — Create draft posts with media, scheduling, and tags
-- **"Are there any open support cases assigned to me?"** — Filter cases by status, priority, assignee, and queue
+- "How did our Instagram perform last month?" Pull profile impressions, engagements, and follower growth for the date range.
+- "Show me our top posts on LinkedIn this quarter." Query post analytics and sort by the metrics you choose.
+- "What are people saying about our brand?" Search listening topics by sentiment, network, language, or text.
+- "Draft a post announcing our product launch across all channels." Create draft posts with media, scheduling, and tags.
+- "Are there any open support cases assigned to me?" Filter cases by status, priority, assignee, and queue.
 
 ---
 
-## 20 Tools Across 6 Domains
+## 28 tools across 6 API domains
 
-### Metadata — 8 tools
+### Authentication: 1 tool
+
+| Tool | Description |
+|------|-------------|
+| `sprout_auth_status` | Check whether authentication is configured and get setup instructions |
+
+### Metadata: 8 tools
 
 Discover and enumerate your Sprout Social account structure.
 
@@ -69,7 +71,7 @@ Discover and enumerate your Sprout Social account structure.
 | `sprout_list_queues` | List case management queues |
 | `sprout_list_topics` | List social listening topics being monitored |
 
-### Analytics — 2 tools
+### Analytics: 4 tools
 
 Query performance metrics across profiles and individual posts. Supports all major networks: Instagram, Facebook, X (Twitter), LinkedIn, YouTube, Pinterest, TikTok, Threads, and Bluesky.
 
@@ -77,21 +79,25 @@ Query performance metrics across profiles and individual posts. Supports all maj
 |------|-------------|
 | `sprout_get_profile_analytics` | Aggregate profile metrics (impressions, engagements, followers) by day over a date range |
 | `sprout_get_post_analytics` | Post-level metrics and content fields with flexible sorting, timezone support, and cursor-based pagination for 10K+ results via `guid_cursor` |
+| `sprout_compile_performance_report` | Combine profile growth and top-post metrics in one report |
+| `sprout_compare_profiles` | Compare selected profiles across the same metrics and date range |
 
-### Messages — 1 tool
+### Messages: 2 tools
 
 | Tool | Description |
 |------|-------------|
 | `sprout_get_messages` | Query inbox messages with filters for profiles, groups, date ranges, post types, tags, language, sender GUIDs, and action timestamps. Cursor-based pagination for large result sets |
+| `sprout_get_all_messages` | Follow message cursors and return a combined result set |
 
-### Listening — 2 tools
+### Listening: 3 tools
 
 | Tool | Description |
 |------|-------------|
 | `sprout_get_listening_messages` | Retrieve individual listening messages for a topic with filters for sentiment, network, text search, language, location, themes, media presence, and distribution type. Supports requesting metrics alongside fields |
 | `sprout_get_listening_metrics` | Aggregated metrics for a listening topic with filters for network, sentiment, text search, language, location, themes, and metric comparisons. Supports dimensions for trend analysis (by day, sentiment, network, etc.) |
+| `sprout_analyze_listening_trends` | Compile daily volume, sentiment, and network distribution for a topic |
 
-### Publishing — 6 tools
+### Publishing: 8 tools
 
 Create draft content and manage media uploads of any size.
 
@@ -102,29 +108,24 @@ Create draft content and manage media uploads of any size.
 | `sprout_get_post` | Retrieve a publishing post by ID |
 | `sprout_start_multipart_upload` | Start a multipart upload for large media files (>50MB) or URL downloads |
 | `sprout_continue_multipart_upload` | Upload subsequent 5MB parts of a multipart media file |
-| `sprout_complete_multipart_upload` | Finalize a multipart upload — automatically polls until processing completes |
+| `sprout_complete_multipart_upload` | Finalize a multipart upload and poll until processing completes |
+| `sprout_draft_campaign` | Create tailored drafts for several profiles under one campaign |
+| `sprout_schedule_campaign_queue` | Schedule a sequence of draft posts at a fixed interval |
 
-### Cases — 1 tool
+### Cases: 2 tools
 
 | Tool | Description |
 |------|-------------|
 | `sprout_get_cases` | Query support and feedback cases with filters for status, priority, type, queue, assignee, assigner, creator, related messages, tags (include/exclude), and multiple date ranges via `additional_filters` |
+| `sprout_triage_support_cases` | Rank active cases that may need attention, including unassigned and older high-priority cases |
 
 ---
 
-## Quick Start
-
-### Install with MCPB
-
-For Claude Desktop and other MCPB-compatible clients, download the local bundle from the [v1.2.0 release](https://github.com/oliverames/sprout-mcp-server/releases/tag/v1.2.0):
-
-[Download `sprout-mcp-server-1.2.0.mcpb`](https://github.com/oliverames/sprout-mcp-server/releases/download/v1.2.0/sprout-mcp-server-1.2.0.mcpb)
-
-The bundle includes the Sprout Social favicon, production runtime dependencies, and setup prompts for API token or OAuth machine-to-machine credentials.
+## Quick start
 
 ### Prerequisites
 
-- **Node.js 18+**
+- **Node.js 20.19+**
 - A **Sprout Social** account with API access enabled ([request access](https://developers.sproutsocial.com/))
 
 ### Install from npm
@@ -144,7 +145,7 @@ npx @oliverames/sprout-mcp-server
 ```bash
 git clone https://github.com/oliverames/sprout-mcp-server.git
 cd sprout-mcp-server
-npm install && npm run build
+npm ci && npm run build
 ```
 
 ---
@@ -153,7 +154,7 @@ npm install && npm run build
 
 There are two ways to connect. Pick the one that fits how the server runs.
 
-### Option A — Token / machine auth (best for unattended automation)
+### Option A: token or machine auth
 
 Use this when the server runs headless (CI, a scheduled job, a shared host).
 
@@ -171,7 +172,7 @@ export SPROUT_CLIENT_SECRET=your-client-secret
 export SPROUT_ORG_ID=your-org-id
 ```
 
-### Option B — Sign in with Sprout (best for a person)
+### Option B: sign in with Sprout
 
 Use this to connect your own Sprout account. You sign in at Sprout's real login page in the browser, so the server never sees your password and your normal 2FA/SSO applies. The interactive flow uses **PKCE**, so it needs only a client ID, with no client secret to configure or store.
 
@@ -192,7 +193,7 @@ npm start
 
 The server loads your saved session and refreshes tokens automatically in the background.
 
-### 1Password Integration
+### 1Password integration
 
 If credentials are not set in the environment, the server automatically attempts to resolve them from [1Password CLI](https://developer.1password.com/docs/cli/):
 
@@ -209,7 +210,7 @@ This means you can skip setting env vars entirely if you have `op` installed and
 
 ## Configuration
 
-### Claude Desktop / Claude Code
+### Claude Desktop and Claude Code
 
 Add to your MCP settings (e.g., `.claude/settings.json`):
 
@@ -243,13 +244,13 @@ Add to your MCP settings (e.g., `.claude/settings.json`):
 }
 ```
 
-### Any MCP Client
+### Any MCP client
 
 The server communicates over **stdio transport**. Point any MCP-compatible client at `node dist/index.js` (or `npx @oliverames/sprout-mcp-server`) with the appropriate environment variables.
 
 ---
 
-## Multi-Customer Support
+## Multi-customer support
 
 On startup, the server auto-discovers your customer ID from the API. If your token has access to multiple customers, specify which one:
 
@@ -257,11 +258,11 @@ On startup, the server auto-discovers your customer ID from the API. If your tok
 export SPROUT_CUSTOMER_ID=123456
 ```
 
-Every tool also accepts an optional `customer_id` parameter to override the default per-request — useful for agencies managing multiple brands.
+Every tool also accepts an optional `customer_id` parameter to override the default for a request, which is useful for agencies managing multiple brands.
 
 ---
 
-## Response Formats
+## Response formats
 
 All tools accept a `response_format` parameter:
 
@@ -272,7 +273,7 @@ All tools accept a `response_format` parameter:
 
 ---
 
-## Supported Networks
+## Supported networks
 
 Analytics, messages, and publishing support all networks connected in your Sprout Social account:
 
@@ -286,44 +287,43 @@ Analytics, messages, and publishing support all networks connected in your Sprou
 | YouTube | ✅ | ✅ | ✅ |
 | Pinterest | ✅ | ✅ | ✅ |
 | Threads | ✅ | ✅ | ✅ |
-| Bluesky | ✅ | ✅ | — |
+| Bluesky | ✅ | ✅ | N/A |
 | Google Business | ✅ | ✅ | ✅ |
-| WhatsApp | — | ✅ | — |
+| WhatsApp | N/A | ✅ | N/A |
 
 ---
 
-## Built-In Reliability
+## Built-in reliability
 
 The server handles the operational details so you don't have to:
 
-- **Rate limiting** — Sliding-window throttle stays under Sprout's 60 req/min limit (soft cap at 55)
-- **Automatic retries** — Exponential backoff on 429, 500, 503, and 504 responses (up to 3 retries)
-- **202 polling** — Media uploads and multipart completions automatically poll until processing finishes
-- **Input validation** — Date ranges, profile limits, and required fields validated before hitting the API
-- **Graceful startup** — Starts in unauthenticated mode with setup instructions if no credentials are found
-- **Response truncation** — Large responses are intelligently truncated to stay within LLM context limits
+- A sliding-window throttle stays under Sprout's 60 request-per-minute limit, with a soft cap at 55.
+- Requests retry with exponential backoff after 429, 500, 503, and 504 responses.
+- Media uploads and multipart completions poll automatically after a 202 response.
+- Zod validates dates, profile limits, and required fields before a request reaches Sprout.
+- The server starts without credentials and keeps its tool catalog visible with setup instructions.
+- Large responses are truncated before they overwhelm the client's context window.
 
 ---
 
-## API Coverage
+## Tool coverage
 
-This server provides **100% coverage** of the Sprout Social Public API (v1).
+The server maps 20 Sprout API endpoints to direct tools and adds seven workflow tools. The authentication status tool brings the protocol-visible catalog to 28. An integration test lists the tools through MCP and checks every name.
 
-| Domain | Endpoints | Tools | Status |
-|--------|-----------|-------|--------|
-| Customer Metadata | 8 | 8 | ✅ Complete |
-| Analytics | 2 | 2 | ✅ Complete |
-| Messages | 1 | 1 | ✅ Complete |
-| Listening | 2 | 2 | ✅ Complete |
-| Publishing | 2 | 2 | ✅ Complete |
-| Media Upload (Simple) | 1 | 1 | ✅ Complete |
-| Media Upload (Multipart) | 3 | 3 | ✅ Complete |
-| Cases | 1 | 1 | ✅ Complete |
-| **Total** | **20** | **20** | **✅ Complete** |
+| Domain | Supported endpoints | Tools |
+|--------|--------------------:|------:|
+| Customer metadata | 8 | 8 |
+| Analytics | 2 | 4 |
+| Messages | 1 | 2 |
+| Listening | 2 | 3 |
+| Publishing and media | 6 | 8 |
+| Cases | 1 | 2 |
+| Authentication status | N/A | 1 |
+| **Total** | **20** | **28** |
 
 ---
 
-## Known Limitations
+## Known limitations
 
 These are Sprout Social API constraints, not server limitations:
 
@@ -341,19 +341,22 @@ These are Sprout Social API constraints, not server limitations:
 ## Development
 
 ```bash
-npm install          # Install dependencies
+npm ci               # Install locked dependencies
 npm run build        # Compile TypeScript
-npm test             # Run test suite (119 tests)
+npm test             # Run the test suite
+npm run check        # Build, test, audit, and inspect the npm package
 npm run test:watch   # Watch mode
 npm run dev          # TypeScript watch mode
 npm start            # Start the server
 ```
 
-### Project Structure
+See [CONTRIBUTING.md](CONTRIBUTING.md) for pull request guidance, [SECURITY.md](SECURITY.md) for private vulnerability reporting, and [RELEASING.md](RELEASING.md) for the release checklist.
+
+### Project structure
 
 ```
 src/
-├── index.ts              # Entry point — auth, customer discovery, tool registration
+├── index.ts              # Entry point: auth, customer discovery, tool registration
 ├── constants.ts          # API URLs, rate limits, validation constraints
 ├── types.ts              # Shared TypeScript interfaces
 ├── schemas/
@@ -364,12 +367,13 @@ src/
 │   ├── filter-builder.ts # Translates typed params → Sprout's filter DSL (eq, neq, in, gt, match, exists)
 │   └── formatter.ts      # Markdown/JSON formatting + truncation
 └── tools/
-    ├── metadata.ts       # 8 tools — account structure discovery
-    ├── analytics.ts      # 2 tools — profile + post performance
-    ├── messages.ts       # 1 tool  — inbox message queries
-    ├── listening.ts      # 2 tools — topic messages + aggregated metrics
-    ├── publishing.ts     # 6 tools — drafts, media upload (simple + multipart)
-    └── cases.ts          # 1 tool  — support case management
+    ├── catalog.ts        # Catalog inventory and registration
+    ├── metadata.ts       # 8 account structure tools
+    ├── analytics.ts      # 4 profile, post, and reporting tools
+    ├── messages.ts       # 2 inbox message tools
+    ├── listening.ts      # 3 topic and trend tools
+    ├── publishing.ts     # 8 draft and media tools
+    └── cases.ts          # 2 case management tools
 ```
 
 ### Architecture
@@ -380,7 +384,7 @@ All tool handlers are **pure functions** with the signature:
 handler(client: ApiClient, customerId: number, params: T) → Promise<ToolResponse>
 ```
 
-This makes every handler independently testable with a mock `ApiClient` — no server bootstrap required.
+This makes every handler independently testable with a mock `ApiClient`. The catalog test uses an in-memory MCP transport to check the list clients receive.
 
 The **filter builder** translates friendly parameters into Sprout's custom filter DSL (`field.op(values)`), keeping the DSL syntax internal to the server.
 
@@ -389,6 +393,8 @@ The **filter builder** translates friendly parameters into Sprout's custom filte
 ## License
 
 MIT
+
+Sprout Social is a trademark of Sprout Social, Inc. This independent project is not affiliated with or endorsed by Sprout Social, Inc.
 
 ---
 

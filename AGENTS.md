@@ -3,6 +3,7 @@
 ## Quick Start
 - `npm install` — install deps
 - `npm run build` — compile TypeScript
+- `npm run check` — build, test, audit production dependencies, and inspect the npm package
 - `npm run dev` — watch mode (tsc --watch)
 - `npm test` — run tests (`vitest run`)
 - `npm run test:watch` — tests in watch mode
@@ -12,7 +13,7 @@
 
 ## Architecture
 - TypeScript MCP server using stdio transport
-- 20 tools across 6 domains: metadata, analytics, messages, listening, publishing, cases
+- 28 tools across 6 API domains: 27 API/workflow tools plus authentication status
 - Filter builder translates friendly params to Sprout's custom DSL
 - Triple auth: API token, OAuth M2M, or Interactive User OAuth (zero-config persistence)
 
@@ -30,12 +31,13 @@ src/
     filter-builder.ts   Translates typed params → Sprout's filter DSL
     formatter.ts        Markdown/JSON formatting + truncation
   tools/
+    catalog.ts          Catalog inventory and registration
     metadata.ts         8 tools — account structure discovery
-    analytics.ts        2 tools — profile + post performance
-    messages.ts         1 tool  — inbox message queries
-    listening.ts        2 tools — topic messages + aggregated metrics
-    publishing.ts       6 tools — drafts, media upload (simple + multipart)
-    cases.ts            1 tool  — support case management
+    analytics.ts        4 tools — profile, post, and reporting
+    messages.ts         2 tools — inbox message queries and pagination
+    listening.ts        3 tools — topic messages, metrics, and trends
+    publishing.ts       8 tools — drafts, campaigns, and media upload
+    cases.ts            2 tools — case queries and triage
 tests/
   tools/                Per-domain test files (mirrors src/tools/)
   services/             Per-service test files (mirrors src/services/)
@@ -61,7 +63,8 @@ tests/
 - Unit tests in `tests/` mirror `src/` structure
 - Mock the `ApiClient` interface for tool handler tests
 - Filter builder tests are pure (no mocking needed)
-- Run: `npm test` or `npx vitest run`
+- The catalog test lists tools through an in-memory MCP transport
+- Run the release gate with `npm run check`
 
 ## Environment Variables
 - `SPROUT_API_TOKEN` — static token (simplest auth)
@@ -69,5 +72,5 @@ tests/
 - `SPROUT_CUSTOMER_ID` — optional, for multi-customer setups
 
 ## Version State
-- Current: 1.2.0 (published to npm)
-- Main branch may have unpublished changes — check `git log --oneline npm/v1.2.0..HEAD` before deciding on next version bump
+- Current: 1.3.1 (published to npm; GitHub tag `v1.3.1`)
+- Main may have later changes; check `git log --oneline v1.3.1..HEAD` before deciding on the next version

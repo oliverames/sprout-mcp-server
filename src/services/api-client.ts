@@ -12,10 +12,12 @@ import {
   RATE_LIMIT_SOFT_CAP,
   RETRYABLE_STATUS_CODES,
   MAX_202_RETRIES,
+  SERVER_VERSION,
 } from "../constants.js";
 import type { AuthProvider } from "./auth.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const USER_AGENT = `sprout-mcp-server/${SERVER_VERSION}`;
 
 export function handleApiError(error: unknown): string {
   if (error && typeof error === "object" && "isAxiosError" in error) {
@@ -92,7 +94,7 @@ export function createApiClient(auth: AuthProvider): ApiClient {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
-      "User-Agent": "sprout-mcp-server/1.2.0",
+      "User-Agent": USER_AGENT,
     },
   });
 
