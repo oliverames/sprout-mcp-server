@@ -18,7 +18,6 @@
   <a href="https://www.npmjs.com/package/@oliverames/sprout-mcp-server"><img src="https://img.shields.io/npm/v/%40oliverames%2Fsprout-mcp-server?style=flat-square&color=f5a542" alt="npm"></a>
   <a href="https://github.com/oliverames/sprout-mcp-server/releases"><img src="https://img.shields.io/github/v/release/oliverames/sprout-mcp-server?style=flat-square&color=f5a542" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f5a542?style=flat-square" alt="License"></a>
-  <a href="https://github.com/oliverames"><img src="https://img.shields.io/badge/Repository-source-0969da?style=flat-square&logo=github&logoColor=white" alt="Repository"></a>
 </p>
 
 <p align="center">
@@ -405,16 +404,8 @@ Sprout Social is a trademark of Sprout Social, Inc. This independent project is 
 ---
 
 <p align="center">
-  <a href="https://github.com/oliverames">
-    <img src="https://img.shields.io/badge/Repository-source-0969da?style=for-the-badge&logo=github&logoColor=white" alt="Repository">
-  </a>
-</p>
-
-<p align="center">
   <sub>
-    Maintained on GitHub
-    &bull; <a href="https://github.com/oliverames">GitHub</a>
-    &bull; <a href="https://github.com/oliverames">LinkedIn</a>
-    &bull; <a href="https://github.com/oliverames">Bluesky</a>
+    Maintained by Oliver Ames
+    &bull; <a href="https://github.com/oliverames/sprout-mcp-server">GitHub</a>
   </sub>
 </p>

@@ -1,5 +1,15 @@
 # Worklog
 
+## 2026-07-13 - Public history cleanup
+
+**What changed**: Rewrote `main` and all four release tags to remove the 96.9 MB Android XAPK from every reachable ref. The rewrite also moved old local Git identities to the GitHub noreply address and removed former donation and profile links from historical blobs. The current README now keeps one simple maintainer link instead of the duplicated footer links produced by the rewrite.
+
+**Verification**: The release gate passes with 140 tests, a clean TypeScript build, zero audited vulnerabilities, and a successful package dry run. Gitleaks reports no findings across 57 rewritten commits. `git rev-list --objects --all` no longer contains the XAPK path or object, and the rewritten main and release tags are on GitHub.
+
+**Storage note**: GitHub still returns the old XAPK blob when requested by its exact object hash. No current branch, tag, release, fresh clone, or npm package references it, but a clone made before the rewrite may still contain it. GitHub continues to retain and serve the unreachable object until Support purges it.
+
+---
+
 ## 2026-06-01 — PKCE "Sign in with Sprout" (Option B); live login blocked on real OAuth client
 
 **What changed**: Added an interactive user-login path using PKCE (S256) alongside the existing token/M2M auth, presented as two clear options (A: API token or OAuth M2M; B: "Sign in with Sprout"). New `src/services/pkce.ts` (`createPkcePair`: 32-byte base64url verifier + S256 challenge) with unit tests. `login.ts` now sends `code_challenge`/`code_challenge_method=S256` on authorize and `code_verifier` on token exchange; client secret is optional. `auth.ts`: `OAuthUserBasedProvider` refreshes with `client_id` alone when no secret is present (public client); `createAuthProvider` accepts a client-id-only public client. Updated `index.ts` auth-status message, `manifest.json`, `.env.example`, and README to the two-option model. Bumped to 1.3.0. Commit `c2942d1`, pushed to origin/main.
