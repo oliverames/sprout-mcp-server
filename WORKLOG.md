@@ -6,7 +6,7 @@
 
 **Verification**: The release gate passes with 140 tests, a clean TypeScript build, zero audited vulnerabilities, and a successful package dry run. Gitleaks reports no findings across 57 rewritten commits. `git rev-list --objects --all` no longer contains the XAPK path or object, and the rewritten main and release tags are on GitHub.
 
-**Storage note**: GitHub still returns the old XAPK blob when requested by its exact object hash. No current branch, tag, release, fresh clone, or npm package references it, but a clone made before the rewrite may still contain it. GitHub continues to retain and serve the unreachable object until Support purges it.
+**Storage note**: GitHub still returns the old XAPK blob when requested by its exact object hash. No current branch, tag, release, fresh clone, or npm package references it, but a clone made before the rewrite may still contain it. GitHub says Support will not remove non-sensitive data, so the XAPK probably does not qualify for a server-side purge. To stop exact-hash access, the clean history needs to move to a new public repository while the old repository becomes private, or the repository must be recreated after preserving its settings and releases.
 
 ---
 
