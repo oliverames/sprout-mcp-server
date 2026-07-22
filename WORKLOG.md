@@ -1,5 +1,19 @@
 # Worklog
 
+## 2026-07-22 - Update the vulnerable server dependency
+
+**What changed**: Updated the server dependency override to a patched release, removing the flagged vulnerable resolution while preserving the existing package API.
+
+**Decisions made**: Used the narrow override already supported by the project rather than a broader dependency migration.
+
+**Left off at**: The dependency update is on `main`; CI is green.
+
+**Open questions**: The real Sprout OAuth credential and live login validation remain unresolved as recorded below.
+
+**Verification**: All 140 tests passed, TypeScript built cleanly, `npm audit` reported zero vulnerabilities, and the live GitHub Actions run passed.
+
+---
+
 ## 2026-07-13 - Public history cleanup
 
 **What changed**: Rewrote `main` and all four release tags to remove the 96.9 MB Android XAPK from every reachable ref. The rewrite also moved old local Git identities to the GitHub noreply address and removed former donation and profile links from historical blobs. The current README now keeps one simple maintainer link instead of the duplicated footer links produced by the rewrite.
