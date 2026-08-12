@@ -72,6 +72,5 @@ tests/
 - `SPROUT_CUSTOMER_ID` — optional, for multi-customer setups
 
 ## Version State
-- Current: 1.3.1 (published to npm; GitHub tag `v1.3.1`)
-- Main may have later changes; check `git log --oneline v1.3.1..HEAD` before deciding on the next version
+- Derive the current version from `git describe --tags --abbrev=0` and npm, then check `git log --oneline <tag>..HEAD` before deciding on the next version; don't trust a number written here
 - 1.3.0 adds PKCE-based interactive login (Option B). Live login is unvalidated: no real Sprout Okta OAuth client (`0oa...`) or API token has been available to test against (see WORKLOG 2026-06-01)
