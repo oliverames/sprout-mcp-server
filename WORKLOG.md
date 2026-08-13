@@ -1,5 +1,19 @@
 # Worklog
 
+## 2026-08-13 - Clear all 9 Dependabot alerts; release v1.3.2
+
+**What changed**: Upgraded four vulnerable transitive dependencies in package-lock.json only (package.json untouched): hono 4.12.30→4.13.1 (4 alerts), ip-address 10.2.0→10.5.0 (3 alerts, one high), fast-uri 3.1.4→3.1.5 (1 high), postcss 8.5.19→8.5.26 (1 moderate, dev-only via vitest). All fixes fit existing semver ranges via plain `npm update`. Commits `0757d72` (fix) and `54505d3` (release: v1.3.2, tag pushed). Published `@oliverames/sprout-mcp-server@1.3.2` to npm.
+
+**Decisions made**: Published because hono/ip-address/fast-uri ship through `@modelcontextprotocol/sdk` (a runtime dependency); existing installs and npx caches hold the vulnerable resolutions until a new version forces re-resolution. postcss alone would not have justified a release.
+
+**Verification**: `npm run check` passed end to end (build, 140 tests, `npm audit --omit=dev --audit-level=high` at zero vulnerabilities, pack dry-run). npm registry confirms 1.3.2 as `latest`.
+
+**Left off at**: GitHub's Dependabot alerts still showed open ~2h after the push because the dependency-graph ingestion job lags; `gh api .../dependency-graph/compare/8bd1ae9...54505d3` proves GitHub parses the fix correctly (all four packages removed at vulnerable versions, added at patched). No action possible on our side; alerts should auto-close.
+
+**Open questions**: Still open from 2026-06-01 — live PKCE login validation remains blocked on a real Sprout Okta OAuth client.
+
+---
+
 ## 2026-07-22 - Update the vulnerable server dependency
 
 **What changed**: Updated the server dependency override to a patched release, removing the flagged vulnerable resolution while preserving the existing package API.
