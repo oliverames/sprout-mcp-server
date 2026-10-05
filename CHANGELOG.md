@@ -2,6 +2,11 @@
 
 This file records user-facing changes. Dates use the release date in the America/New_York time zone.
 
+## 1.3.2, 2026-08-12
+
+- Updated transitive dependencies (`hono`, `ip-address`, `fast-uri`, `postcss`) to patched versions. No tool or behavior changes.
+- The source, MCPB manifest, and reported server version now match the published package version.
+
 ## 1.3.1, 2026-06-05
 
 - The server now starts without credentials and keeps the complete tool catalog available for discovery. API calls return setup guidance until authentication is configured.
