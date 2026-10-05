@@ -1,5 +1,19 @@
 # Worklog
 
+## 2026-10-05 - Fix main CI and release v1.3.3
+
+**What changed**: CI on `main` had been failing since 1.3.2 because the release commit (`54505d3`) bumped only `package.json` and the lockfile, leaving `manifest.json`, `SERVER_VERSION` and the changelog at 1.3.1. Commit `fde072c` aligned them. Commit `5a54277` updated transitive dependencies (hono 4.13.13, fast-uri 3.1.8, ip-address 10.7.3, qs 6.16.0, vitest 4.1.11) with lockfile-only `npm audit fix`, clearing newly published advisories. Dependabot closed its five superseded PRs (#7, #8, #10, #11, #12). Released v1.3.3 from `c2c9b1d` so the published package reports one consistent version.
+
+**Decisions made**: Patch release rather than re-tagging 1.3.2: the published 1.3.2 reported server version 1.3.1 at runtime and its tag must not move. The GitHub release object for v1.3.2 was never created and was left alone.
+
+**Verification**: `npm ci` and `npm run check` passed (build, 140 tests, `npm audit` clean, pack dry-run). Both gitleaks scans found no leaks. CI on `c2c9b1d` passed before publishing. `npm view` shows 1.3.3 as `latest` with `gitHead` `c2c9b1d4cce52fa3479bf2f1821122708d8184bd`. The published tarball reports `SERVER_VERSION = "1.3.3"`. Tag `v1.3.3` pushed and GitHub release created.
+
+**Left off at**: Nothing open. Issue #13 is closed.
+
+**Open questions**: None.
+
+---
+
 ## 2026-08-13 - Clear all 9 Dependabot alerts; release v1.3.2
 
 **What changed**: Upgraded four vulnerable transitive dependencies in package-lock.json only (package.json untouched): hono 4.12.30→4.13.1 (4 alerts), ip-address 10.2.0→10.5.0 (3 alerts, one high), fast-uri 3.1.4→3.1.5 (1 high), postcss 8.5.19→8.5.26 (1 moderate, dev-only via vitest). All fixes fit existing semver ranges via plain `npm update`. Commits `0757d72` (fix) and `54505d3` (release: v1.3.2, tag pushed). Published `@oliverames/sprout-mcp-server@1.3.2` to npm.
