@@ -2,6 +2,11 @@
 
 This file records user-facing changes. Dates use the release date in the America/New_York time zone.
 
+## 1.3.3, 2026-10-05
+
+- Fixed the server version reported at runtime and in the user agent. It said 1.3.1 in the published 1.3.2 package. The source, MCPB manifest, and package now all report the same version.
+- Updated transitive dependencies (`hono`, `fast-uri`, `ip-address`, `qs`) to patched versions that fix newly published security advisories. No tool or behavior changes.
+
 ## 1.3.2, 2026-08-12
 
 - Updated transitive dependencies (`hono`, `ip-address`, `fast-uri`, `postcss`) to patched versions. No tool or behavior changes.
