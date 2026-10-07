@@ -2,7 +2,7 @@
 
 ## 2026-10-07 - GitHub Issue Review Closeout
 
-**What changed**: Reviewed all 1 open issues against source at `0b6351ce0806` and their complete issue history. Closed as testing-only waivers: [#9](https://github.com/oliverames/sprout-mcp-server/issues/9).
+**What changed**: Reviewed the one open issue against source at `0b6351ce0806` and their complete issue history. Closed as testing-only waivers: [#9](https://github.com/oliverames/sprout-mcp-server/issues/9).
 
 **Decisions made**: Close completed implementations even when device acceptance remains, and close testing-only tasks under Oliver's explicit instruction. Keep unresolved defects, missing implementation, release work, and owner decisions open.
 
