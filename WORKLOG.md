@@ -1,5 +1,17 @@
 # Worklog
 
+## 2026-10-07 - GitHub Issue Review Closeout
+
+**What changed**: Reviewed all 1 open issues against source at `0b6351ce0806` and their complete issue history. Closed as testing-only waivers: [#9](https://github.com/oliverames/sprout-mcp-server/issues/9).
+
+**Decisions made**: Close completed implementations even when device acceptance remains, and close testing-only tasks under Oliver's explicit instruction. Keep unresolved defects, missing implementation, release work, and owner decisions open.
+
+**Left off at**: Resolved this session: issue assignment and state reconciliation. GitHub was independently re-read on October 7, 2026 at 10:20 AM EDT. All 2 repository issues include Oliver as an assignee, with 0 open. Source paths and cited lines were checked. No runtime tests, deployment, or application changes were performed. This is one part of the account-wide review.
+
+**Open questions**: No open GitHub issues remain from this review. Other previously recorded operational follow-ups retain their dated status. No new issue was needed for this review.
+
+---
+
 ## 2026-10-05 - Fix main CI and release v1.3.3
 
 **What changed**: CI on `main` had been failing since 1.3.2 because the release commit (`54505d3`) bumped only `package.json` and the lockfile, leaving `manifest.json`, `SERVER_VERSION` and the changelog at 1.3.1. Commit `fde072c` aligned them. Commit `5a54277` updated transitive dependencies (hono 4.13.13, fast-uri 3.1.8, ip-address 10.7.3, qs 6.16.0, vitest 4.1.11) with lockfile-only `npm audit fix`, clearing newly published advisories. Dependabot closed its five superseded PRs (#7, #8, #10, #11, #12). Released v1.3.3 from `c2c9b1d` so the published package reports one consistent version.
