@@ -73,21 +73,6 @@ export interface CursorPaging {
   next_cursor?: string;
 }
 
-export interface PaginationEnvelope<T> {
-  data: T[];
-  pagination: {
-    has_more: boolean;
-    next_cursor?: string;
-    current_page?: number;
-    total_pages?: number;
-  };
-}
-
-export interface MediaUploadResult {
-  media_id: string;
-  expiration_time: string;
-}
-
 export interface ToolResponse {
   content: Array<{ type: "text"; text: string }>;
   isError?: boolean;
