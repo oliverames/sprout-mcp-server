@@ -1,5 +1,15 @@
 # Worklog
 
+## 2026-10-23 - MCP SDK 1.32.1 and transitive security fixes
+
+**What changed**: `f46a858` refreshed the lockfile to `@modelcontextprotocol/sdk` 1.32.1 and vitest 4.1.12. That clears `proxy-addr` (critical IP spoofing), the MCP SDK session-binding, OAuth credential, redirect and request-size advisories, the `follow-redirects` credential leaks, and the `ip-address`, vite and vitest advisories.
+
+**Verification**: Build and 140 tests pass, `npm audit` reports 0 vulnerabilities, and CI passed. No package was published.
+
+**Left off at**: Dependabot PRs #15 through #18 cover the same bumps and are superseded by `f46a858`.
+
+---
+
 ## 2026-10-07 - GitHub Issue Review Closeout
 
 **What changed**: Reviewed the one open issue against source at `0b6351ce0806` and their complete issue history. Closed as testing-only waivers: [#9](https://github.com/oliverames/sprout-mcp-server/issues/9).
