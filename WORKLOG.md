@@ -1,5 +1,15 @@
 # Worklog
 
+## 2026-10-23 - Security review
+
+**What changed**: `676dff6` writes `~/.sprout-mcp-auth.json` with mode 0600 from both `npm run login` and token refresh, and tightens an existing file. It holds the refresh token and, for confidential clients, the client secret, and was previously created readable by other local users. `c71e529` moves zod from 3.25.76 to 4.6.7 for GHSA-mrhx-c7xc-m3w5, which has no 3.x fix and was failing the CI audit gate at high. `f24ee44` moves `body-parser` to 2.4.0 for GHSA-27r3-jxmh-p828. `02447da` removes the unused `PaginationEnvelope` and `MediaUploadResult` types.
+
+**Verification**: `npm run check` passes the build, 140 tests, the production audit with 0 vulnerabilities, and the pack dry run. A `tools/list` dump of all 28 tools under zod 4 matched the zod 3 build exactly, and a malformed `sprout_create_draft_post` call was still refused with a validation error.
+
+**Left off at**: Not released. The zod and file-mode fixes reach users only in a new npm and MCPB release.
+
+---
+
 ## 2026-10-23 - MCP SDK 1.32.1 and transitive security fixes
 
 **What changed**: `f46a858` refreshed the lockfile to `@modelcontextprotocol/sdk` 1.32.1 and vitest 4.1.12. That clears `proxy-addr` (critical IP spoofing), the MCP SDK session-binding, OAuth credential, redirect and request-size advisories, the `follow-redirects` credential leaks, and the `ip-address`, vite and vitest advisories.
