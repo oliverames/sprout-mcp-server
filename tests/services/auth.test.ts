@@ -151,6 +151,7 @@ describe("createAuthProvider", () => {
         })
       );
       const mockWrite = vi.spyOn(fs, "writeFileSync").mockImplementation(() => {});
+      const mockChmod = vi.spyOn(fs, "chmodSync").mockImplementation(() => {});
 
       const axios = await import("axios");
       const mockPost = vi.fn().mockResolvedValue({
@@ -171,7 +172,9 @@ describe("createAuthProvider", () => {
         expect.stringContaining("grant_type=refresh_token"),
         expect.any(Object)
       );
-      expect(mockWrite).toHaveBeenCalled();
+      // The file holds a refresh token and client secret: owner-only, even if it already existed.
+      expect(mockWrite).toHaveBeenCalledWith(expect.any(String), expect.any(String), expect.objectContaining({ mode: 0o600 }));
+      expect(mockChmod).toHaveBeenCalledWith(expect.any(String), 0o600);
     });
     it("instantiates provider when no env vars are set but token file exists", () => {
       vi.unstubAllEnvs();
@@ -195,6 +198,7 @@ describe("createAuthProvider", () => {
         })
       );
       const mockWrite = vi.spyOn(fs, "writeFileSync").mockImplementation(() => {});
+      vi.spyOn(fs, "chmodSync").mockImplementation(() => {});
 
       const axios = await import("axios");
       const mockPost = vi.fn().mockResolvedValue({
@@ -246,6 +250,7 @@ describe("createAuthProvider", () => {
         })
       );
       vi.spyOn(fs, "writeFileSync").mockImplementation(() => {});
+      vi.spyOn(fs, "chmodSync").mockImplementation(() => {});
 
       const axios = await import("axios");
       const mockPost = vi.fn().mockResolvedValue({

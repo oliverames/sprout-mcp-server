@@ -74,6 +74,16 @@ class OAuthM2MProvider implements AuthProvider {
   }
 }
 
+/**
+ * Write the user login file. It holds a refresh token and possibly a client
+ * secret, so it is owner-only; the chmod also tightens a file an older
+ * version created with the default umask.
+ */
+export function writeTokenFile(tokenPath: string, data: unknown): void {
+  fs.writeFileSync(tokenPath, JSON.stringify(data, null, 2), { encoding: "utf-8", mode: 0o600 });
+  fs.chmodSync(tokenPath, 0o600);
+}
+
 interface UserTokenData {
   client_id?: string;
   client_secret?: string;
@@ -180,7 +190,7 @@ class OAuthUserBasedProvider implements AuthProvider {
         expires_at: newExpiresAt,
       };
 
-      fs.writeFileSync(this.tokenPath, JSON.stringify(updatedTokenData, null, 2), "utf-8");
+      writeTokenFile(this.tokenPath, updatedTokenData);
 
       this.cachedToken = newAccessToken;
       this.expiresAt = newExpiresAt;

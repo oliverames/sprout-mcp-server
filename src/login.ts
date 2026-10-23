@@ -1,6 +1,5 @@
 import http from "node:http";
 import url from "node:url";
-import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
@@ -11,6 +10,7 @@ import open from "open";
 import { OAUTH_AUTH_ENDPOINT, OAUTH_TOKEN_ENDPOINT } from "./constants.js";
 import { resolveApiKey } from "./op-fallback.js";
 import { createPkcePair } from "./services/pkce.js";
+import { writeTokenFile } from "./services/auth.js";
 
 // Make sure 1Password fallback runs if needed.
 // The client secret is optional — the interactive flow uses PKCE.
@@ -102,7 +102,7 @@ async function runLogin() {
           expires_at: Date.now() + (expires_in || 3600) * 1000,
         };
 
-        fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokenData, null, 2), "utf-8");
+        writeTokenFile(TOKEN_PATH, tokenData);
 
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(`
