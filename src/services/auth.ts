@@ -4,6 +4,14 @@ import path from "node:path";
 import os from "node:os";
 import { OAUTH_TOKEN_ENDPOINT } from "../constants.js";
 
+/** Thrown when no usable Sprout credential is available; the caller must fix it. */
+export class SproutAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SproutAuthError";
+  }
+}
+
 export interface AuthProvider {
   getToken(): Promise<string>;
 }
@@ -128,7 +136,7 @@ class OAuthUserBasedProvider implements AuthProvider {
 
   private async resolveAndRefreshToken(): Promise<string> {
     if (!fs.existsSync(this.tokenPath)) {
-      throw new Error(
+      throw new SproutAuthError(
         "Sprout Social MCP Server: No user login credentials found. Please run 'npm run login' to authenticate your personal account."
       );
     }
@@ -138,11 +146,11 @@ class OAuthUserBasedProvider implements AuthProvider {
       const content = fs.readFileSync(this.tokenPath, "utf-8");
       tokenData = JSON.parse(content);
     } catch (error: any) {
-      throw new Error(`Failed to parse token storage file: ${error.message}. Please run 'npm run login' again.`);
+      throw new SproutAuthError(`Failed to parse token storage file: ${error.message}. Please run 'npm run login' again.`);
     }
 
     if (!tokenData.access_token || !tokenData.refresh_token) {
-      throw new Error("Invalid token storage file. Please run 'npm run login' to re-authenticate.");
+      throw new SproutAuthError("Invalid token storage file. Please run 'npm run login' to re-authenticate.");
     }
 
     const activeClientId = this.clientId || tokenData.client_id;
@@ -155,7 +163,7 @@ class OAuthUserBasedProvider implements AuthProvider {
     }
 
     if (!activeClientId) {
-      throw new Error(
+      throw new SproutAuthError(
         "Sprout Social MCP Server: Missing OAuth client credentials. Please set SPROUT_CLIENT_ID (and SPROUT_CLIENT_SECRET for a confidential client), or run 'npm run login' to re-authenticate."
       );
     }
@@ -201,7 +209,7 @@ class OAuthUserBasedProvider implements AuthProvider {
       console.error("❌ Failed to refresh Sprout OAuth access token:", data || error.message);
       
       if (status === 400 || status === 401) {
-        throw new Error(
+        throw new SproutAuthError(
           "Your Sprout Social login session has expired or been revoked. Please run 'npm run login' to re-authenticate."
         );
       }

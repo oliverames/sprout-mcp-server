@@ -2,6 +2,10 @@
 
 This file records user-facing changes. Dates use the release date in the America/New_York time zone.
 
+## Unreleased
+
+- Added optional Sentry error reporting, off unless `SENTRY_DSN` is set. Reports carry only the error type, a fixed message, stack frames, the tool name, and a Sprout 5xx status. Post content, customer messages, tool arguments, and Sprout responses are never sent. See "Error reporting" in the README.
+
 ## 1.3.3, 2026-10-05
 
 - Fixed the server version reported at runtime and in the user agent. It said 1.3.1 in the published 1.3.2 package. The source, MCPB manifest, and package now all report the same version.

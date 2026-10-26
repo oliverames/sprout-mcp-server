@@ -247,6 +247,12 @@ Add to your MCP settings (e.g., `.claude/settings.json`):
 
 The server communicates over **stdio transport**. Point any MCP-compatible client at `node dist/index.js` (or `npx @oliverames/sprout-mcp-server`) with the appropriate environment variables.
 
+### Error reporting
+
+Error reporting is off by default. If you set `SENTRY_DSN` in the server's environment, unexpected tool failures (code errors, Sprout 5xx responses, network failures, and timeouts) and fatal errors are sent to that Sentry project. Without it, `@sentry/node` is never loaded.
+
+Each report carries only the error type, a fixed message, stack frames with package-relative paths, the tool name, and the HTTP status of a failed Sprout response. Post content, customer messages, case details, profile and customer names, listening results, tool arguments, error messages, Sprout responses, tokens, breadcrumbs, user data, and request data are removed before anything is sent. Missing or expired credentials and Sprout 4xx answers are not reported, and neither are per-post failures inside a campaign, which the tool already returns in its results.
+
 ---
 
 ## Multi-customer support

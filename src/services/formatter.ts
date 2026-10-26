@@ -1,6 +1,7 @@
 import { CHARACTER_LIMIT } from "../constants.js";
 import type { ResponseFormat, ToolResponse } from "../types.js";
 import { handleApiError } from "./api-client.js";
+import { reportToolError } from "./tool-errors.js";
 
 /**
  * Resolve a potentially nested value from a record.
@@ -62,6 +63,7 @@ export async function safeToolCall(
   try {
     return await fn();
   } catch (error) {
+    reportToolError(error);
     return {
       isError: true,
       content: [{ type: "text" as const, text: handleApiError(error) }],

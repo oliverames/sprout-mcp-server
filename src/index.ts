@@ -1,27 +1,51 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { createAuthProvider, type AuthProvider } from "./services/auth.js";
+import { createAuthProvider, SproutAuthError, type AuthProvider } from "./services/auth.js";
 import { createApiClient } from "./services/api-client.js";
 import { SERVER_VERSION } from "./constants.js";
 import { registerSproutTools } from "./tools/catalog.js";
 import type { SproutApiResponse, SproutCustomer } from "./types.js";
 import { resolveApiKey } from "./op-fallback.js";
+import {
+  captureFatalError,
+  captureToolError,
+  errorReportingEnabled,
+  flushErrorReporting,
+  initErrorReporting,
+} from "./error-reporting.js";
+import { instrumentToolErrors } from "./services/tool-errors.js";
 
 class MissingAuthProvider implements AuthProvider {
   async getToken(): Promise<string> {
-    throw new Error(
+    throw new SproutAuthError(
       "Sprout Social MCP server is not authenticated. Set SPROUT_API_TOKEN, set SPROUT_CLIENT_ID + SPROUT_CLIENT_SECRET + SPROUT_ORG_ID, or run npm run login."
     );
   }
 }
 
 async function main(): Promise<void> {
+  // 0. Optional Sentry reporting; a no-op unless SENTRY_DSN is set.
+  await initErrorReporting({ release: `sprout-mcp-server@${SERVER_VERSION}` });
+  if (errorReportingEnabled()) {
+    process.on("uncaughtException", (error) => {
+      console.error("Uncaught exception:", error);
+      captureFatalError("uncaughtException", error);
+      exitAfterFlush(1);
+    });
+    process.on("unhandledRejection", (reason) => {
+      console.error("Unhandled promise rejection:", reason);
+      captureFatalError("unhandledRejection", reason);
+      exitAfterFlush(1);
+    });
+  }
+
   // 1. Create MCP server (always starts, even without auth)
   const server = new McpServer({
     name: "sprout-mcp-server",
     version: SERVER_VERSION,
   });
+  if (errorReportingEnabled()) instrumentToolErrors(server, captureToolError);
 
   // 2. Resolve credentials from 1Password if not already set
   resolveApiKey("SPROUT_API_TOKEN", "op://Development/Sprout API Token/credential");
@@ -78,17 +102,23 @@ async function main(): Promise<void> {
   console.error("Sprout Social MCP Server running via stdio");
 }
 
+// Exit after a bounded Sentry flush; without SENTRY_DSN the flush is a
+// resolved no-op and the process exits immediately as before.
+function exitAfterFlush(code: number): void {
+  void flushErrorReporting(2000).finally(() => process.exit(code));
+}
+
 main().catch((error) => {
   console.error("Fatal error:", error.message);
-  process.exit(1);
+  exitAfterFlush(1);
 });
 
 process.on("SIGINT", () => {
   console.error("Sprout Social MCP Server shutting down (SIGINT)");
-  process.exit(0);
+  exitAfterFlush(0);
 });
 
 process.on("SIGTERM", () => {
   console.error("Sprout Social MCP Server shutting down (SIGTERM)");
-  process.exit(0);
+  exitAfterFlush(0);
 });
