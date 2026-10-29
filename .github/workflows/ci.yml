@@ -3,7 +3,23 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - "package*.json"
+      - "manifest.json"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "package*.json"
+      - "manifest.json"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/ci.yml"
   workflow_dispatch:
 
 permissions:

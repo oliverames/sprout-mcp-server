@@ -4,6 +4,7 @@ This file records user-facing changes. Dates use the release date in the America
 
 ## Unreleased
 
+- Updated `@hono/node-server` to 2.1.5 for [GHSA-rmxm-3fg6-px4f](https://github.com/advisories/GHSA-rmxm-3fg6-px4f).
 - Added optional Sentry error reporting, off unless `SENTRY_DSN` is set. Reports carry only the error type, a fixed message, stack frames, the tool name, and a Sprout 5xx status. Post content, customer messages, tool arguments, and Sprout responses are never sent. See "Error reporting" in the README.
 
 ## 1.3.3, 2026-10-05
