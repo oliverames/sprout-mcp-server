@@ -1,5 +1,17 @@
 # Worklog
 
+## 2026-10-29 - Verify npm delivery and recent-change checks
+
+**What changed**: Verified the public npm registry serves version 1.3.4, matching the committed package version. Both full maintenance runs found this version already up to date. No new upload ran. The prior publication-pending status is resolved by the registry check.
+
+**Decisions made**: Reused this session's passing `npm test` result: 144 tests across 13 files, with zero failures. No source changed in this documentation update.
+
+**Left off at**: No new source change, build or live Sprout request was needed for this delivery check. The final full maintenance run passed all eight stages.
+
+**Open questions**: Still open: The live PKCE login check still needs a real Sprout Okta OAuth client.
+
+---
+
 ## 2026-10-28 - Adapter security patch and release preparation
 
 **What changed**: Updated the existing `@hono/node-server` pin and lockfile from 2.0.11 to 2.1.5 for [GHSA-rmxm-3fg6-px4f](https://github.com/advisories/GHSA-rmxm-3fg6-px4f), within the SDK's accepted range. Version 1.3.4 now agrees across npm, the server and its MCPB manifest. CI runs for source, release metadata and test changes, so worklog-only updates skip the unchanged runtime matrix.
